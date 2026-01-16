@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Study Bank</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- デザイン定義 --- */
+        :root {
+            --bg-color: #F5F7FA;
+            --text-color: #2C3E50;
+            --accent-color: #6AB187;
+            --danger-color: #e74c3c;
+            --brown-shelf: #8D6E63; /* 棚の色 */
+            --card-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: "Courier New", "Hiragino Kaku Gothic ProN", monospace; /* ドット絵に合うフォント */
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            padding-bottom: 90px;
+        }
+
+        h1 { font-size: 1.4rem; margin-bottom: 1.5rem; opacity: 0.9; }
+
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* UIパーツ */
+        .card {
+            background: var(--card-bg);
+            border: 2px solid var(--text-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 4px 4px 0px rgba(44, 62, 80, 0.1);
+            position: relative;
+        }
+
+        .label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 8px; color: #666; }
+        .big-number { font-size: 2.2rem; font-weight: bold; }
+        .unit { font-size: 1rem; margin-left: 5px; }
+
+        input {
+            width: 100%; padding: 12px; font-size: 1.1rem;
+            border: 2px solid var(--text-color); border-radius: 8px;
+            margin-bottom: 10px; text-align: center; outline: none;
+            font-family: inherit;
+        }
+
+        button {
+            width: 100%; padding: 14px; font-size: 1rem; font-weight: bold; color: white;
+            border: none; border-radius: 8px; cursor: pointer; margin-bottom: 5px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.1s, box-shadow 0.1s;
+            font-family: inherit;
+        }
+        button:active { transform: translateY(4px); box-shadow: none; }
+
+        .btn-study { background-color: var(--text-color); }
+        .btn-game { background-color: var(--accent-color); }
+        .btn-stop { background-color: var(--danger-color); }
+
+        /* --- スライム育成エリア --- */
+        .slime-stage {
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #eef2f3;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* スライム画像制御 */
+        .slime-img {
+            image-rendering: pixelated; /* ドット絵をくっきり表示 */
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .slime-img:active { transform: scale(0.9) !important; }
+
+        /* 成長バー */
+        .progress-bar-bg { width: 80%; height: 10px; background: #ddd; border-radius: 5px; margin-top: 15px; overflow: hidden; border: 1px solid #999; }
+        .progress-bar-fill { height: 100%; background: var(--accent-color); width: 0%; transition: width 0.5s; }
+
+        /* スライム選択ボタン */
+        .slime-select-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .slime-choice { 
+            border: 2px solid #ccc; border-radius: 8px; padding: 10px; cursor: pointer; 
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+        }
+        .slime-choice:hover { border-color: var(--text-color); background: #f0f0f0; }
+        .slime-choice img { width: 40px; image-rendering: pixelated; margin-bottom: 5px; }
+
+        /* --- お花棚エリア --- */
+        .shelf-container {
+            background-color: var(--brown-shelf);
+            padding: 10px;
+            border-radius: 8px;
+            border: 4px solid #5D4037;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3列 */
+            gap: 8px;
+            min-height: 200px;
+        }
+
+        .flower-pot {
+            background-color: #D7CCC8; /* 棚の内側 */
+            border-radius: 4px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            position: relative;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
+        .flower-pot canvas {
+            width: 64px; height: 64px; /* ドット絵サイズ */
+            image-rendering: pixelated;
+            margin-bottom: 5px;
+        }
+
+        /* 花の詳細ポップアップ */
+        .flower-info {
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: white; border: 2px solid var(--text-color); padding: 5px;
+            border-radius: 4px; font-size: 0.7rem; width: 120px; z-index: 10;
+            display: none; text-align: left; pointer-events: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .flower-pot:hover .flower-info { display: block; }
+
+        /* ナビゲーション */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: white;
+            display: flex; justify-content: space-around; padding: 10px 0;
+            border-top: 3px solid var(--text-color); z-index: 100;
+        }
+        .nav-item {
+            font-size: 0.7rem; color: #999; cursor: pointer; flex: 1; text-align: center;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .nav-item span { font-size: 1.5rem; margin-bottom: 2px; }
+        .nav-item.active { color: var(--text-color); font-weight: bold; }
+
+        /* 共通 */
+        .badge { display:inline-block; padding:2px 6px; border-radius:4px; color:white; font-size:0.7rem; }
+        .rare-n { background:#95a5a6; }
+        .rare-r { background:#f1c40f; color:black; border:1px solid #f39c12; }
+        .rare-sr { background: linear-gradient(45deg, #e66465, #9198e5); border:1px solid #fff; }
+
+        #loginPage { margin-top: 25vh; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. ログイン -->
+    <div id="loginPage" class="page active">
+        <h1>STUDY BANK v4</h1>
+        <div class="card">
+            <p class="label">ユーザー名を入力</p>
+            <form onsubmit="login(event)">
+                <input type="text" id="usernameInput" placeholder="名前" maxlength="10" required>
+                <button type="submit" class="btn-study">スタート</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. ホーム -->
+    <div id="homePage" class="page">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h1 style="margin:0;">HOME</h1>
+            <small onclick="logout()" style="text-decoration:underline; cursor:pointer; color:#999;">Logout</small>
+        </div>
+
+        <div class="card">
+            <span class="label">遊べる時間 (残高)</span>
+            <span class="big-number" id="balanceDisplay">0</span><span class="unit">分</span>
+        </div>
+
+        <div class="card" style="border-color: var(--accent-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span class="label" style="color:var(--accent-color);">お財布残高</span>
+                    <span class="big-number" style="font-size:1.8rem; color:var(--accent-color);" id="moneyDisplayHome">0</span><span class="unit">円</span>
+                </div>
+            </div>
+            <div id="penaltyWarning" style="display:none; color:var(--danger-color); font-size:0.8rem; margin-top:5px;">⚠️ 赤字のため明日ペナルティ</div>
+        </div>
+
+        <div class="card">
+            <span class="label">✏️ 勉強を記録 (スライムも育つ!)</span>
+            <input type="number" id="studyInput" placeholder="分" min="1">
+            <button class="btn-study" onclick="addStudy()">＋ 記録する</button>
+        </div>
+    </div>
+
+    <!-- 3. スライム育成 (NEW) -->
+    <div id="slimePage" class="page">
+        <h1>SLIME ROOM</h1>
+
+        <!-- 育成中画面 -->
+        <div id="activeSlimeView" style="display:none;">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="label">育成中</span>
+                    <span class="label" id="slimeNameDisplay"></span>
+                </div>
+                
+                <div class="slime-stage" onclick="tapSlime()">
+                    <!-- スライム画像 -->
+                    <img id="slimeImage" class="slime-img" src="" alt="Slime" width="64">
+                    <div id="slimeMessage" style="position:absolute; top:10px; font-size:0.8rem; background:white; padding:5px; border-radius:10px; opacity:0; transition:opacity 0.5s;">ぷるぷる</div>
+                </div>
+
+                <div style="text-align:left;">
+                    <span class="label">成長度 <span id="slimePercent">0</span>%</span>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="slimeBar"></div>
+                    </div>
+                    <p style="font-size:0.8rem; color:#666; margin-top:5px;">
+                        あと <b id="minsToNext">0</b> 分の勉強で成長！
+                    </p>
+                </div>
+            </div>
+            
+            <button class="btn-stop" onclick="releaseSlime()" style="background:#95a5a6; font-size:0.8rem;">育成を中断する</button>
+        </div>
+
+        <!-- 選択画面 -->
+        <div id="selectSlimeView" style="display:none;">
+            <div class="card">
+                <span class="label">育てるスライムを選んでね</span>
+                <div class="slime-select-grid">
+                    <div class="slime-choice" onclick="startSlime('blue')">
+                        <img src="blue1.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><rect width=%2210%22 height=%2210%22 fill=%22%233498db%22/></svg>'">
+                        <small>水色<br>(2時間)</small>
+                    </div>
+                    <div class="slime-choice" onclick="startSlime('yellow')">
+                        <img src="yellow1.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><rect width=%2210%22 height=%2210%22 fill=%22%23f1c40f%22/></svg>'">
+                        <small>黄色<br>(4時間)</small>
+                    </div>
+                    <div class="slime-choice" onclick="startSlime('red')">
+                        <img src="red1.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 10%22><rect width=%2210%22 height=%2210%22 fill=%22%23e74c3c%22/></svg>'">
+                        <small>赤色<br>(6時間)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. お花棚 (NEW) -->
+    <div id="gardenPage" class="page">
+        <h1>FLOWER SHELF</h1>
+        <div class="card" style="background:#fdfdfd;">
+            <p class="label">獲得したお花コレクション</p>
+            <div id="shelfGrid" class="shelf-container">
+                <!-- JSで生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 帳簿 -->
+    <div id="walletPage" class="page">
+        <h1>WALLET</h1>
+        <div class="card">
+            <span class="label">残高</span>
+            <span class="big-number" id="walletBalanceDisplay">0</span><span class="unit">円</span>
+        </div>
+        <div class="card">
+            <input type="text" id="expenseItem" placeholder="使ったもの" required>
+            <input type="number" id="expenseCost" placeholder="金額" min="1">
+            <button class="btn-study" style="background-color:#7f8c8d;" onclick="addExpense()">支出を記録</button>
+        </div>
+        <div class="card"><ul id="expenseList" style="list-style:none; padding:0; text-align:left;"></ul></div>
+    </div>
+
+    <!-- 6. ゲーム -->
+    <div id="timerPage" class="page">
+        <h1>GAME</h1>
+        <div class="card">
+            <div id="timerSetup">
+                <input type="number" id="timerInput" placeholder="分" min="1">
+                <button class="btn-game" onclick="startTimer()">▶ タイマースタート</button>
+            </div>
+            <div id="timerActive" style="display:none;">
+                <h2 id="timerDisplay">00:00</h2>
+                <div id="endTimeDisplay" style="font-size:0.8rem;"></div>
+                <button class="btn-stop" onclick="stopTimerManual()">■ 終了</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ナビゲーション -->
+<div class="nav-bar" id="navBar" style="display:none;">
+    <div class="nav-item active" onclick="showPage('homePage', this)"><span>🏠</span>ホーム</div>
+    <div class="nav-item" onclick="showPage('slimePage', this)"><span>💧</span>育成</div>
+    <div class="nav-item" onclick="showPage('gardenPage', this)"><span>🌷</span>棚</div>
+    <div class="nav-item" onclick="showPage('walletPage', this)"><span>👛</span>帳簿</div>
+    <div class="nav-item" onclick="showPage('timerPage', this)"><span>🎮</span>ゲーム</div>
+</div>
+
+<script>
+// --- 定数定義 ---
+const SLIME_TYPES = {
+    blue:   { name: "水色スライム", target: 120, color: "#3498db" }, // 2時間
+    yellow: { name: "黄色スライム", target: 240, color: "#f1c40f" }, // 4時間
+    red:    { name: "赤色スライム", target: 360, color: "#e74c3c" }  // 6時間
+};
+
+const FLOWERS = {
+    normal: ["チューリップ", "パンジー", "タンポポ", "コスモス"],
+    rare:   ["アネモネ", "カーネーション", "桜", "スミレ", "胡蝶蘭"],
+    sr:     ["クリスマスローズ", "バラ", "ひまわり", "ユリ", "月下美人", "ネモフィラ"]
+};
+
+// --- グローバル変数 ---
+let currentUser = null;
+let userData = {}; // { logs, expenses, slime: {type, startMins, fedMins, lastFed}, flowers: [] }
+let timerInterval = null;
+
+// --- ログイン & 初期化 ---
+function login(e) {
+    if(e) e.preventDefault();
+    const name = document.getElementById('usernameInput').value.trim();
+    if(!name) return;
+    currentUser = name;
+    loadData();
+    checkPenalty();
+    
+    document.getElementById('loginPage').classList.remove('active');
+    document.getElementById('homePage').classList.add('active');
+    document.getElementById('navBar').style.display = 'flex';
+    
+    if(userData.timerEndTime) restoreTimer();
+    updateSlimeUI();
+    renderShelf();
+}
+function logout() { location.reload(); }
+
+// --- データ管理 ---
+function loadData() {
+    const stored = localStorage.getItem('studyBank_v4_' + currentUser);
+    if (stored) {
+        userData = JSON.parse(stored);
+    } else {
+        // v3からの引き継ぎ、または新規
+        const old = localStorage.getItem('studyBank_v3_' + currentUser);
+        if(old) {
+            userData = JSON.parse(old);
+            userData.flowers = [];
+            userData.slime = null;
+        } else {
+            userData = { 
+                logs: [], expenses: [], flowers: [], slime: null,
+                totalStudy: 0, totalGame: 0, totalSpent: 0,
+                lastLoginDate: new Date().toLocaleDateString('ja-JP') 
+            };
+        }
+    }
+    // 既存データの補完
+    if(!userData.flowers) userData.flowers = [];
+    updateUI();
+}
+function saveData() {
+    localStorage.setItem('studyBank_v4_' + currentUser, JSON.stringify(userData));
+    updateUI();
+}
+
+// --- 勉強記録 (スライムの餌やり連携) ---
+function addStudy() {
+    const mins = parseInt(document.getElementById('studyInput').value);
+    if (!mins || mins <= 0) return;
+
+    // ログ記録
+    const today = new Date().toLocaleDateString('ja-JP');
+    userData.logs.push({ date: today, type: 'study', minutes: mins });
+    userData.totalStudy += mins;
+
+    // スライムへの餌やり処理
+    if (userData.slime && userData.slime.active) {
+        userData.slime.fedMins += mins;
+        userData.slime.lastFed = Date.now(); // 最終餌やり時刻更新
+        checkSlimeEvolution(); // 進化・完了チェック
+    }
+
+    document.getElementById('studyInput').value = '';
+    saveData();
+    alert(`${mins}分 記録しました！\n(スライムにも ${mins}分のエネルギーが届きました)`);
+    updateSlimeUI();
+}
+
+// --- 帳簿・ゲーム等の既存機能（省略せず実装） ---
+function addExpense() {
+    const item = document.getElementById('expenseItem').value;
+    const cost = parseInt(document.getElementById('expenseCost').value);
+    if (!item || !cost) return;
+    userData.expenses.push({ date: new Date().toLocaleDateString('ja-JP'), item, cost });
+    userData.totalSpent += cost;
+    document.getElementById('expenseItem').value=''; document.getElementById('expenseCost').value='';
+    saveData();
+}
+
+// --- ペナルティチェック ---
+function checkPenalty() {
+    const today = new Date().toLocaleDateString('ja-JP');
+    if (userData.lastLoginDate && userData.lastLoginDate !== today) {
+        const earned = Math.floor(userData.totalStudy / 60) * 50;
+        const balance = earned - userData.totalSpent;
+        if (balance < 0) {
+            alert(`【赤字ペナルティ】\n昨日の収支がマイナスでした。\nゲーム可能時間を60分減らします。`);
+            userData.totalGame += 60;
+            saveData();
+        }
+    }
+    userData.lastLoginDate = today;
+}
+
+// --- スライム育成システム ---
+function startSlime(type) {
+    if(!confirm(`${SLIME_TYPES[type].name} を育てますか？`)) return;
+    
+    userData.slime = {
+        active: true,
+        type: type,
+        fedMins: 0,
+        targetMins: SLIME_TYPES[type].target,
+        lastFed: Date.now(),
+        startDate: new Date().toLocaleDateString('ja-JP')
+    };
+    saveData();
+    updateSlimeUI();
+}
+
+function updateSlimeUI() {
+    const viewSelect = document.getElementById('selectSlimeView');
+    const viewActive = document.getElementById('activeSlimeView');
+
+    if (!userData.slime || !userData.slime.active) {
+        viewSelect.style.display = 'block';
+        viewActive.style.display = 'none';
+        return;
+    }
+
+    viewSelect.style.display = 'none';
+    viewActive.style.display = 'block';
+
+    const s = userData.slime;
+    const info = SLIME_TYPES[s.type];
+
+    // 名前とバー更新
+    document.getElementById('slimeNameDisplay').innerText = info.name;
+    const percent = Math.min(100, Math.floor((s.fedMins / s.targetMins) * 100));
+    document.getElementById('slimePercent').innerText = percent;
+    document.getElementById('slimeBar').style.width = percent + "%";
+    document.getElementById('minsToNext').innerText = Math.max(0, s.targetMins - s.fedMins);
+
+    // 画像とサイズ制御
+    const img = document.getElementById('slimeImage');
+    
+    // 状態チェック (24時間放置で画像3)
+    const now = Date.now();
+    const hoursSinceFed = (now - s.lastFed) / (1000 * 60 * 60);
+    
+    // 画像パス構築 (例: blue1.jpg)
+    let suffix = "1"; // 通常
+    if (hoursSinceFed >= 24) suffix = "3"; // 放置
+    
+    // タップ中フラグがあれば2にする (JSで制御)
+    img.src = `${s.type}${suffix}.jpg`;
+    
+    // 予備画像(SVG)をセット (画像がない場合用)
+    img.onerror = function() {
+        // 色だけ変えた四角形
+        this.src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><rect width='10' height='10' fill='${encodeURIComponent(info.color)}'/></svg>`;
+    };
+
+    // サイズ制御 (0%->1倍, 50%->1.5倍, 100%->2倍)
+    let scale = 1.0;
+    if (percent >= 100) scale = 2.0;
+    else if (percent >= 50) scale = 1.5;
+    
+    img.style.transform = `scale(${scale})`;
+    img.setAttribute('data-base-scale', scale); // タップアニメーション用
+}
+
+function tapSlime() {
+    const img = document.getElementById('slimeImage');
+    const s = userData.slime;
+    // 一瞬画像2にする
+    const currentSrc = img.src;
+    img.src = `${s.type}2.jpg`; 
+    
+    // メッセージ
+    const msg = document.getElementById('slimeMessage');
+    msg.style.opacity = 1;
+    msg.style.top = "0px";
+    
+    setTimeout(() => {
+        img.src = currentSrc; // 元に戻す
+        msg.style.opacity = 0;
+        msg.style.top = "10px";
+    }, 500);
+}
+
+function checkSlimeEvolution() {
+    if (userData.slime.fedMins >= userData.slime.targetMins) {
+        setTimeout(() => {
+            if(confirm("おめでとう！スライムが完全に成長しました！\nお別れして、お花をもらいますか？")) {
+                finishSlime();
+            }
+        }, 500);
+    }
+}
+
+function releaseSlime() {
+    if(confirm("育成を中断しますか？\n(現在の成長は失われます)")) {
+        userData.slime = null;
+        saveData();
+        updateSlimeUI();
+    }
+}
+
+// --- ガチャシステム (お花獲得) ---
+function finishSlime() {
+    const type = userData.slime.type;
+    
+    // 確率設定
+    let rates = { n:0, r:0, sr:0 };
+    if (type === 'blue')   rates = { n:70, r:20, sr:10 };
+    else if (type === 'yellow') rates = { n:50, r:30, sr:20 };
+    else if (type === 'red')    rates = { n:30, r:40, sr:30 };
+
+    // 抽選
+    const rand = Math.random() * 100;
+    let rarity = 'normal';
+    if (rand < rates.sr) rarity = 'sr';
+    else if (rand < rates.sr + rates.r) rarity = 'rare';
+
+    // 花の種類決定
+    const list = FLOWERS[rarity];
+    const flowerName = list[Math.floor(Math.random() * list.length)];
+
+    // 保存
+    const newFlower = {
+        name: flowerName,
+        rarity: rarity,
+        date: new Date().toLocaleDateString('ja-JP'),
+        from: SLIME_TYPES[type].name,
+        color: generateFlowerColor(flowerName) // 描画用の色定義
+    };
+    userData.flowers.push(newFlower);
+    userData.slime = null; // スライムとお別れ
+    saveData();
+
+    alert(`ありがとう！\nお礼に【${flowerName}】(${getRarityLabel(rarity)})をもらいました！\n棚に飾りました。`);
+    updateSlimeUI();
+    renderShelf();
+}
+
+function getRarityLabel(r) {
+    if(r==='sr') return "スーパーレア✨";
+    if(r==='rare') return "レア⭐";
+    return "ノーマル";
+}
+
+// --- ドット絵生成エンジン (お花描画) ---
+function generateFlowerColor(name) {
+    // 花の名前に応じて色を返す簡易マッパー
+    if(name.includes("赤") || name.includes("バラ")) return "#e74c3c";
+    if(name.includes("黄") || name.includes("ひまわり") || name.includes("タンポポ")) return "#f1c40f";
+    if(name.includes("青") || name.includes("ネモフィラ")) return "#3498db";
+    if(name.includes("紫") || name.includes("パンジー") || name.includes("スミレ")) return "#9b59b6";
+    if(name.includes("白") || name.includes("ユリ")) return "#ecf0f1";
+    if(name.includes("ピンク") || name.includes("桜") || name.includes("コスモス")) return "#ff9ff3";
+    return "#e67e22"; // デフォルト
+}
+
+function renderShelf() {
+    const grid = document.getElementById('shelfGrid');
+    grid.innerHTML = '';
+    
+    // 新しい順に表示
+    [...userData.flowers].reverse().forEach(flower => {
+        const div = document.createElement('div');
+        div.className = 'flower-pot';
+        
+        // Canvas生成
+        const canvas = document.createElement('canvas');
+        canvas.width = 16; canvas.height = 16; // 内部解像度16x16ドット
+        drawPixelFlower(canvas, flower);
+        
+        // 詳細情報
+        const info = document.createElement('div');
+        info.className = 'flower-info';
+        info.innerHTML = `
+            <b>${flower.name}</b><br>
+            <span class="badge rare-${flower.rarity}">${getRarityLabel(flower.rarity)}</span><br>
+            ${flower.date}<br>
+            from ${flower.from}
+        `;
+
+        div.appendChild(canvas);
+        div.appendChild(info);
+        grid.appendChild(div);
+    });
+}
+
+function drawPixelFlower(canvas, flower) {
+    const ctx = canvas.getContext('2d');
+    const c = flower.color;
+    const stem = "#2ecc71"; // 茎の緑
+    const pot = "#d35400";  // 鉢の茶色
+
+    // ドット絵ロジック (16x16)
+    // 1. 鉢 (下部)
+    ctx.fillStyle = pot;
+    ctx.fillRect(4, 13, 8, 3); // 底
+    ctx.fillRect(3, 11, 10, 2); // 縁
+
+    // 2. 茎
+    ctx.fillStyle = stem;
+    ctx.fillRect(7, 9, 2, 2); 
+    
+    // 3. 花 (種類によって少し形を変える)
+    ctx.fillStyle = c;
+    
+    // 簡易的な形状分岐
+    if (flower.name.includes("ひまわり") || flower.name.includes("タンポポ")) {
+        // 丸い形
+        ctx.fillRect(6, 6, 4, 4);
+        ctx.fillRect(5, 7, 6, 2);
+        ctx.fillStyle = "#6d4c41"; // 真ん中
+        ctx.fillRect(7, 7, 2, 2);
+    } 
+    else if (flower.name.includes("チューリップ") || flower.name.includes("スズラン")) {
+        // コップ型
+        ctx.fillRect(5, 5, 6, 5);
+        ctx.clearRect(7, 5, 2, 1); // 上の切れ込み
+    }
+    else if (flower.name.includes("バラ") || flower.name.includes("カーネーション")) {
+        // 複雑な丸
+        ctx.fillRect(5, 5, 6, 5);
+        ctx.fillStyle = "rgba(0,0,0,0.2)"; // 影
+        ctx.fillRect(6, 6, 2, 2);
+    }
+    else {
+        // 一般的な花形 (十字)
+        ctx.fillRect(6, 4, 4, 6);
+        ctx.fillRect(4, 6, 8, 2);
+        ctx.fillStyle = "#fff"; // 花芯
+        ctx.fillRect(7, 7, 2, 2);
+    }
+}
+
+// --- UI更新全般 ---
+function updateUI() {
+    // 勉強時間残高
+    document.getElementById('balanceDisplay').innerText = userData.totalStudy - userData.totalGame;
+    
+    // お金
+    const earned = Math.floor(userData.totalStudy / 60) * 50;
+    document.getElementById('moneyDisplayHome').innerText = (earned - userData.totalSpent).toLocaleString();
+    document.getElementById('walletBalanceDisplay').innerText = (earned - userData.totalSpent).toLocaleString();
+
+    // 帳簿リスト
+    const list = document.getElementById('expenseList');
+    list.innerHTML = "";
+    userData.expenses.slice().reverse().slice(0, 5).forEach(ex => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span style="font-size:0.8rem;color:#999">${ex.date}</span> ${ex.item} <b style="float:right;color:#e74c3c">-${ex.cost}</b>`;
+        li.style.borderBottom = "1px dashed #ddd";
+        li.style.padding = "5px 0";
+        list.appendChild(li);
+    });
+}
+
+// --- ゲームタイマー系 (v3と同様) ---
+function startTimer() {
+    const mins = parseInt(document.getElementById('timerInput').value);
+    const balance = userData.totalStudy - userData.totalGame;
+    if (!mins || mins <= 0) return alert("時間を入力してください");
+    if (mins > balance) return alert("残高が足りません");
+
+    userData.timerEndTime = Date.now() + mins * 60000;
+    userData.currentTimerMins = mins;
+    saveData();
+    setupTimerUI();
+}
+function setupTimerUI() {
+    document.getElementById('timerSetup').style.display = 'none';
+    document.getElementById('timerActive').style.display = 'block';
+    
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const diff = userData.timerEndTime - Date.now();
+        if(diff <= 0) finishTimerAuto();
+        else {
+            const m = Math.floor(diff/60000);
+            const s = Math.floor((diff%60000)/1000);
+            document.getElementById('timerDisplay').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+    }, 1000);
+}
+function restoreTimer() {
+    showPage('timerPage', document.querySelectorAll('.nav-item')[4]);
+    const diff = userData.timerEndTime - Date.now();
+    if(diff > 0) setupTimerUI();
+    else finishTimerAuto();
+}
+function finishTimerAuto() {
+    clearInterval(timerInterval);
+    if(userData.currentTimerMins) {
+        userData.totalGame += userData.currentTimerMins;
+        userData.logs.push({date: new Date().toLocaleDateString('ja-JP'), type:'game', minutes:userData.currentTimerMins});
+        userData.currentTimerMins = null;
+        userData.timerEndTime = null;
+        saveData();
+        alert("時間です！");
+    }
+    resetTimerUI();
+    updateUI();
+}
+function stopTimerManual() {
+    if(!confirm("終了しますか？")) return;
+    finishTimerAuto();
+}
+function resetTimerUI() {
+    document.getElementById('timerSetup').style.display='block';
+    document.getElementById('timerActive').style.display='none';
+    document.getElementById('timerInput').value='';
+}
+function showPage(pageId, navItem) {
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if(navItem) navItem.classList.add('active');
+}
+</script>
+
+</body>
+</html>
