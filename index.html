@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>花ちゃんウォーク</title>
-    <!-- ドット絵フォント -->
     <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -23,10 +22,9 @@
             background-color: var(--bg-color);
             margin: 0; padding: 0 0 80px 0;
             color: var(--text-color);
-            overflow: hidden; /* アプリっぽく */
+            overflow: hidden;
         }
 
-        /* --- UI Components --- */
         .container {
             max-width: 600px; margin: 0 auto; height: 100vh;
             display: flex; flex-direction: column;
@@ -42,6 +40,7 @@
             padding: 15px;
             margin: 10px;
             position: relative;
+            z-index: 10;
         }
 
         .btn {
@@ -56,185 +55,130 @@
         }
         .btn:active { transform: translateY(4px); box-shadow: 0 0 0 #c0392b; }
 
-        /* --- Screens --- */
-        .screen {
-            flex: 1; overflow-y: auto; display: none; padding-bottom: 20px;
-            background-image: radial-gradient(#dbeeff 15%, transparent 16%), radial-gradient(#dbeeff 15%, transparent 16%);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-        }
+        .screen { flex: 1; overflow-y: auto; display: none; padding-bottom: 20px; }
         .screen.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
-        /* --- Sprite System --- */
-        /* 画像レイアウト (4x4 Grid想定):
-           Row1: Hero (Idle, Walk, Attack, X)
-           Row2: Gacha Chars (Hero, Mage, Warrior, Villager)
-           Row3: Enemies (Slime, Goblin, King, Dragon)
-           Row4: Backgrounds (Forest, Town, X, X)
-        */
-        .sprite-sheet {
-            display: none; /* JSでロードした画像をここにセット */
+        /* --- Backgrounds --- */
+        .home-scene {
+            height: 300px; width: 100%; position: relative; overflow: hidden;
         }
+        .parallax-bg {
+            position: absolute; top:0; left:0; width:100%; height:100%; z-index: 0;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 100%);
+        }
+        .parallax-layer {
+            position: absolute; bottom: 0; left: 0; width: 200%; height: 100%;
+            background-repeat: repeat-x; animation: scroll linear infinite;
+        }
+        .layer-clouds {
+            height: 100px; top: 20px; opacity: 0.6; animation-duration: 60s;
+            background-image: radial-gradient(circle, #fff 50%, transparent 50%); background-size: 60px 60px;
+        }
+        .layer-mountains {
+            height: 150px; bottom: 60px; animation-duration: 30s;
+            background-image: linear-gradient(135deg, #5C6BC0 25%, transparent 25%), linear-gradient(225deg, #5C6BC0 25%, transparent 25%);
+            background-size: 100px 100px;
+        }
+        .layer-trees-back {
+            height: 80px; bottom: 50px; animation-duration: 15s;
+            background: conic-gradient(from 150deg at 50% 30%, #388E3C 0deg 60deg, transparent 60deg 360deg);
+            background-size: 40px 60px; background-position: bottom;
+        }
+        .layer-trees-front {
+            height: 100px; bottom: 20px; animation-duration: 8s;
+            background: conic-gradient(from 150deg at 50% 30%, #43A047 0deg 60deg, transparent 60deg 360deg);
+            background-size: 60px 80px; background-position: bottom;
+        }
+        .layer-ground {
+            height: 40px; bottom: 0; width: 100%; background: #8D6E63; border-top: 4px solid #5D4037; z-index: 5;
+        }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-        .sprite {
-            display: inline-block;
-            background-image: var(--sprite-url, none); /* JSでセット */
-            background-size: 400% 400%; /* 4 columns, 4 rows */
+        /* --- New Image System --- */
+        /* 個別画像を表示するためのクラス */
+        .char-img {
+            width: 100%; height: 100%;
+            background-size: contain;
             background-repeat: no-repeat;
-            image-rendering: pixelated;
-            position: relative;
-        }
-        
-        /* プレースホルダー（画像がない時用） */
-        .sprite::after {
-            content: '?';
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.1); color: #aaa;
-            font-size: 2rem;
-            z-index: -1;
-        }
-
-        /* Sprite Mappings */
-        /* Row 1: Hero */
-        .sp-hero-idle   { background-position: 0% 0%; }
-        .sp-hero-walk   { background-position: 33.3% 0%; animation: bounce 0.5s infinite alternate; }
-        .sp-hero-attack { background-position: 66.6% 0%; }
-        
-        /* Row 2: Allies */
-        .sp-ally-hero    { background-position: 0% 33.3%; }
-        .sp-ally-mage    { background-position: 33.3% 33.3%; }
-        .sp-ally-warrior { background-position: 66.6% 33.3%; }
-        .sp-ally-villager{ background-position: 100% 33.3%; }
-
-        /* Row 3: Enemies */
-        .sp-en-slime  { background-position: 0% 66.6%; }
-        .sp-en-goblin { background-position: 33.3% 66.6%; }
-        .sp-en-king   { background-position: 66.6% 66.6%; transform: scale(1.3); }
-        .sp-en-dragon { background-position: 100% 66.6%; transform: scale(1.5); }
-
-        /* Row 4: Backgrounds */
-        .bg-forest { 
-            background-image: var(--sprite-url, none); 
-            background-position: 0% 100%; 
-            background-size: 200% 400%; /* 横2枚、縦4行として扱う */
-        }
-        .bg-town { 
-            background-image: var(--sprite-url, none); 
-            background-position: 100% 100%; 
-            background-size: 200% 400%;
-        }
-
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-5px); } }
-
-        /* --- Home Screen --- */
-        .hero-stage {
-            height: 250px;
-            width: 100%;
-            position: relative;
-            border-bottom: 4px solid #4a4a4a;
-            overflow: hidden;
-            background-color: #81c784; /* fallback */
-            image-rendering: pixelated;
-        }
-        .char-main {
-            width: 120px; height: 120px;
-            position: absolute; bottom: 20px; left: 50%;
-            transform: translateX(-50%);
-        }
-
-        /* --- Battle Screen --- */
-        .battle-view {
-            height: 250px;
-            background: #222;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 4px solid #fff;
-        }
-        .battler {
-            width: 100px; height: 100px;
-            position: absolute; bottom: 30px;
-        }
-        .battler.p { left: 20%; }
-        .battler.e { right: 20%; }
-        
-        /* Damage Text Effect */
-        .dmg-popup {
-            position: absolute;
-            color: white; font-size: 2.5rem; font-weight: bold;
-            text-shadow: 2px 2px 0 #000;
-            pointer-events: none;
-            z-index: 100;
-            animation: popUp 0.8s forwards;
-        }
-        .dmg-crit { color: #ffeb3b; font-size: 3.5rem; }
-        
-        @keyframes popUp {
-            0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
-            20% { transform: translate(-50%, -40px) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -80px) scale(1); opacity: 0; }
-        }
-
-        .shake-screen { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-4px, 0, 0); }
-            20%, 80% { transform: translate3d(8px, 0, 0); }
-            30%, 50%, 70% { transform: translate3d(-16px, 0, 0); }
-            40%, 60% { transform: translate3d(16px, 0, 0); }
-        }
-
-        /* --- Gacha Screen --- */
-        .gacha-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            display: none;
-            justify-content: center; align-items: center; flex-direction: column;
-        }
-        .stone-gem {
-            font-size: 5rem;
-            cursor: pointer;
-            filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
-            animation: float 2s infinite ease-in-out;
+            background-position: center bottom;
+            image-rendering: pixelated; /* ドット絵をくっきり表示 */
             transition: transform 0.1s;
         }
-        .stone-gem:active { transform: scale(0.9); }
-        
+
+        /* アニメーション定義 */
+        .anim-walk { animation: bounce 0.5s infinite alternate; }
+        .anim-attack { animation: lunge 0.3s; }
+        .anim-damage { animation: shake 0.4s; filter: brightness(2) sepia(1) hue-rotate(-50deg) saturate(5); } /* 赤く点滅 */
+
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        @keyframes lunge { 0% { transform: translateX(0); } 50% { transform: translateX(20px); } 100% { transform: translateX(0); } }
+        @keyframes shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-5px); } 75% { transform:translateX(5px); } }
+
+        /* キャラクターコンテナ */
+        .char-main-container {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10;
+            width: 120px; height: 120px;
+        }
+
+        /* バトル画面 */
+        .battle-view {
+            height: 250px; background: #222; position: relative; overflow: hidden;
+            border-bottom: 4px solid #fff;
+            background-image: linear-gradient(to bottom, #333, #000);
+        }
+        .battler-box {
+            position: absolute; bottom: 40px; width: 100px; height: 100px; z-index: 5;
+        }
+        .battler-box.p { left: 15%; }
+        .battler-box.e { right: 15%; }
+
+        /* Damage Popup */
+        .dmg-popup {
+            position: absolute; color: white; font-size: 2.5rem; font-weight: bold;
+            text-shadow: 2px 2px 0 #000; pointer-events: none; z-index: 100;
+            animation: popUp 0.8s forwards; width: 100px; text-align: center;
+        }
+        .dmg-player { color: #ffeb3b; font-size: 3rem; }
+        .dmg-enemy { color: #ff7e79; }
+        @keyframes popUp {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+            20% { transform: translate(0, -40px) scale(1.2); opacity: 1; }
+            100% { transform: translate(0, -80px) scale(1); opacity: 0; }
+        }
+
+        /* Gacha */
+        .gacha-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .stone-gem {
+            font-size: 5rem; cursor: pointer; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+            animation: float 2s infinite ease-in-out;
+        }
         @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-20px); } }
         
         .gacha-glow {
-            position: absolute; width: 300px; height: 300px;
-            border-radius: 50%;
-            opacity: 0;
-            pointer-events: none;
+            position: absolute; width: 300px; height: 300px; border-radius: 50%; opacity: 0; transition: opacity 0.5s;
         }
-        .glow-blue { box-shadow: 0 0 50px 20px #3498db; background: rgba(52, 152, 219, 0.3); }
-        .glow-gold { box-shadow: 0 0 80px 30px #f1c40f; background: rgba(241, 196, 15, 0.3); }
-        .glow-rainbow {
-            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,0,0,0.2) 20%, rgba(0,255,0,0.2) 40%, rgba(0,0,255,0.2) 60%, transparent 80%);
-            animation: spin 1s linear infinite;
-        }
+        .glow-ssr { background: radial-gradient(circle, rgba(255,215,0,0.5), transparent); animation: spin 2s infinite linear; }
+        .glow-sr { background: radial-gradient(circle, rgba(192,192,192,0.5), transparent); }
+        .glow-n { background: radial-gradient(circle, rgba(135,206,235,0.5), transparent); }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
         .char-reveal {
-            transform: scale(0); opacity: 0;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-align: center; color: white;
+            transform: scale(0); opacity: 0; transition: 0.5s; text-align: center; color: white;
         }
         .char-reveal.show { transform: scale(1); opacity: 1; }
 
-        /* --- Navigation --- */
+        /* Nav */
         .nav-bar {
-            position: absolute; bottom: 0; width: 100%; height: 70px;
+            position: fixed; bottom: 0; width: 100%; height: 70px;
             background: #fff; border-top: 4px solid #4a4a4a;
-            display: flex; justify-content: space-around; align-items: center;
-            z-index: 1000;
+            display: flex; justify-content: space-around; align-items: center; z-index: 1000;
         }
-        .nav-item {
-            text-align: center; color: #999; font-size: 0.7rem; cursor: pointer;
-            width: 20%;
-        }
+        .nav-item { text-align: center; color: #999; font-size: 0.7rem; width: 20%; cursor: pointer; }
         .nav-item.active { color: var(--primary); font-weight: bold; transform: translateY(-2px); }
         .nav-icon { font-size: 1.5rem; display: block; margin-bottom: 2px; }
 
@@ -246,15 +190,25 @@
 
     <!-- HOME -->
     <div id="screen-home" class="screen active">
-        <!-- Stage / Char View -->
-        <div id="home-bg" class="hero-stage bg-forest">
-            <div style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); color:white; padding:5px 10px; border-radius:15px; font-size:0.9rem;">
-                Lv.<span id="disp-lvl">1</span> <span id="disp-name">花ちゃん</span>
+        <div class="home-scene">
+            <div class="parallax-bg">
+                <div class="parallax-layer layer-clouds"></div>
+                <div class="parallax-layer layer-mountains"></div>
+                <div class="parallax-layer layer-trees-back"></div>
+                <div class="parallax-layer layer-trees-front"></div>
+                <div class="parallax-layer layer-ground"></div>
             </div>
-            <div id="home-char" class="sprite char-main sp-hero-walk"></div>
+            
+            <div class="char-main-container">
+                <div style="background:rgba(0,0,0,0.6); color:white; padding:2px 8px; border-radius:10px; font-size:0.8rem; text-align:center; margin-bottom:5px;">
+                    Lv.<span id="disp-lvl">1</span> <span id="disp-name">花ちゃん</span>
+                </div>
+                <!-- ホーム画面では歩く画像(hana2)を使用 -->
+                <div id="home-char" class="char-img anim-walk"></div>
+            </div>
         </div>
 
-        <div class="pixel-panel" style="text-align:center;">
+        <div class="pixel-panel" style="text-align:center; margin-top:-20px;">
             <div style="font-size:0.9rem; color:#888;">今日の歩数</div>
             <div style="font-size:3rem; color:#e74c3c; line-height:1;"><span id="disp-steps">0</span></div>
             <div style="font-size:0.8rem; margin-top:5px;">
@@ -289,11 +243,16 @@
             <div id="stage-list"></div>
         </div>
         
-        <!-- Battle Scene (Overlay) -->
         <div id="battle-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#222; z-index:1500; overflow-y:auto;">
             <div class="battle-view" id="battle-stage">
-                <div id="btl-p" class="sprite battler p sp-hero-idle"></div>
-                <div id="btl-e" class="sprite battler e sp-en-slime"></div>
+                <!-- Player -->
+                <div class="battler-box p">
+                    <div id="btl-p" class="char-img"></div>
+                </div>
+                <!-- Enemy -->
+                <div class="battler-box e">
+                    <div id="btl-e" class="char-img"></div>
+                </div>
             </div>
             
             <div style="padding:15px; color:#fff;">
@@ -335,20 +294,19 @@
     <div class="nav-item active" onclick="nav('home',this)"><span class="nav-icon">🏠</span>ホーム</div>
     <div class="nav-item" onclick="nav('battle',this)"><span class="nav-icon">⚔️</span>バトル</div>
     <div class="nav-item" onclick="nav('gacha',this)"><span class="nav-icon">💎</span>ガチャ</div>
-    <div class="nav-item" onclick="document.getElementById('file-input').click()"><span class="nav-icon">⚙️</span>画像</div>
+    <div class="nav-item" onclick="alert('画像をファイルとして配置してください：hana1.jpg, hana2.jpg, hana3.jpg, enemy1.jpg〜enemy4.jpg')"><span class="nav-icon">ℹ️</span>info</div>
 </div>
 
-<!-- Hidden File Input -->
-<input type="file" id="file-input" accept="image/*" style="display:none;" onchange="loadSprite(this)">
-
-<!-- Gacha Animation Overlay -->
+<!-- Gacha Overlay -->
 <div id="gacha-ui" class="gacha-overlay">
     <div id="gacha-glow" class="gacha-glow"></div>
     <div id="gacha-stone" class="stone-gem" onclick="openStone()">💎</div>
-    <div style="color:white; margin-top:20px; animation:blink 1s infinite;">TAP THE GEM!</div>
+    <div style="color:white; margin-top:20px; animation:blink 1s infinite;">TAP!</div>
     
     <div id="gacha-reveal" class="char-reveal">
-        <div id="new-char-img" class="sprite" style="width:120px; height:120px; border:4px solid white; border-radius:10px; background-color:#fff;"></div>
+        <div style="width:120px; height:120px; border:4px solid white; border-radius:10px; background-color:#fff; margin:0 auto;">
+            <div id="new-char-img" class="char-img"></div>
+        </div>
         <h2 id="new-char-name" style="margin:10px 0; font-size:2rem; text-shadow:0 0 10px gold;">???</h2>
         <div id="new-char-rare" style="font-size:1.5rem;">SSR</div>
         <button class="btn" style="margin-top:20px; width:200px;" onclick="closeGacha()">OK</button>
@@ -366,19 +324,21 @@
 
 <script>
     // --- Data Definition ---
+    // 画像パス定義: index.html と同じ階層にある画像を参照
+    // hueFilter: 画像がないガチャキャラ用の色変えフィルタ
     const CHARS = {
-        hana: { name: "花ちゃん", rarity: "N", skinBase: "sp-hero", stats: {hp:100, atk:10, def:10} },
-        hero: { name: "伝説の勇者", rarity: "SSR", skinBase: "sp-ally-hero", stats: {hp:150, atk:25, def:15} },
-        mage: { name: "魔導師", rarity: "SR", skinBase: "sp-ally-mage", stats: {hp:90, atk:35, def:8} },
-        warrior: { name: "重戦士", rarity: "R", skinBase: "sp-ally-warrior", stats: {hp:130, atk:15, def:20} },
-        villager: { name: "村人A", rarity: "N", skinBase: "sp-ally-villager", stats: {hp:80, atk:8, def:8} }
+        hana: { name: "花ちゃん", rarity: "N",  imgIdle:"hana1.jpg", imgWalk:"hana2.jpg", imgAtk:"hana3.jpg", stats: {hp:100, atk:10, def:10}, hueFilter: "" },
+        hero: { name: "伝説の勇者", rarity: "SSR", imgIdle:"hana1.jpg", imgWalk:"hana2.jpg", imgAtk:"hana3.jpg", stats: {hp:150, atk:25, def:15}, hueFilter: "hue-rotate(45deg)" },
+        mage: { name: "魔導師", rarity: "SR",  imgIdle:"hana1.jpg", imgWalk:"hana2.jpg", imgAtk:"hana3.jpg", stats: {hp:90, atk:35, def:8}, hueFilter: "hue-rotate(180deg)" },
+        warrior: { name: "重戦士", rarity: "R",   imgIdle:"hana1.jpg", imgWalk:"hana2.jpg", imgAtk:"hana3.jpg", stats: {hp:130, atk:15, def:20}, hueFilter: "grayscale(100%)" },
+        villager: { name: "村人A", rarity: "N",   imgIdle:"hana1.jpg", imgWalk:"hana2.jpg", imgAtk:"hana3.jpg", stats: {hp:80, atk:8, def:8}, hueFilter: "sepia(100%)" }
     };
 
     const ENEMIES = [
-        { name: "スライム", skin: "sp-en-slime", hp:40, atk:5 },
-        { name: "ゴブリン", skin: "sp-en-goblin", hp:80, atk:12 },
-        { name: "キング", skin: "sp-en-king", hp:400, atk:30 },
-        { name: "ドラゴン", skin: "sp-en-dragon", hp:3000, atk:150 }
+        { name: "スライム", img: "enemy1.jpg", hp:40, atk:5 },
+        { name: "ゴブリン", img: "enemy2.jpg", hp:80, atk:12 },
+        { name: "キング",   img: "enemy3.jpg", hp:400, atk:30 },
+        { name: "ドラゴン", img: "enemy4.jpg", hp:3000, atk:150 }
     ];
 
     // --- State ---
@@ -387,35 +347,27 @@
         stones: 5,
         cleared: 0,
         roster: [{ id: Date.now(), type: 'hana', lv: 1, exp: 0 }],
-        activeId: null // set in init
+        activeId: null
     };
 
-    // --- Init & Save ---
     function init() {
-        const saved = localStorage.getItem('hw_v5');
+        const saved = localStorage.getItem('hw_v7');
         if(saved) state = JSON.parse(saved);
         if(!state.activeId && state.roster.length>0) state.activeId = state.roster[0].id;
-        
-        // Load Sprite if cached (簡易実装: 画像は毎回設定推奨だが、ブラウザキャッシュに頼る)
-        // 今回はユーザーに毎回設定させるか、LocalStorageにBase64保存は重いので、
-        // 起動時に「画像をロードしてね」と促す運用にする
-        
         updateUI();
     }
     
     function save() {
-        localStorage.setItem('hw_v5', JSON.stringify(state));
+        localStorage.setItem('hw_v7', JSON.stringify(state));
         updateUI();
     }
 
-    // --- Logic ---
     function getActiveChar() {
         return state.roster.find(c => c.id === state.activeId) || state.roster[0];
     }
 
     function getStats(charData) {
         const tmpl = CHARS[charData.type];
-        // Lv10以降は 1.01^(lv-10) 倍率
         let mult = Math.pow(1.1, Math.min(9, charData.lv - 1));
         if(charData.lv > 10) mult *= Math.pow(1.01, charData.lv - 10);
         
@@ -435,34 +387,25 @@
         const v = parseInt(document.getElementById('inp-steps').value);
         if(!v || v<=0) return;
         document.getElementById('inp-steps').value = "";
-        
         state.total += v;
         const char = getActiveChar();
         char.exp += v;
-        
-        // Level Up Logic
         while(true) {
             const req = getNextExp(char.lv);
-            if(char.exp >= req) {
-                char.exp -= req;
-                char.lv++;
-                alert(`レベルアップ！ Lv.${char.lv} になりました！`);
-            } else break;
+            if(char.exp >= req) { char.exp -= req; char.lv++; alert(`Level Up! Lv.${char.lv}`); } else break;
         }
         save();
     }
 
-    // --- UI Update ---
     function updateUI() {
         const char = getActiveChar();
         const tmpl = CHARS[char.type];
         const stats = getStats(char);
         const req = getNextExp(char.lv);
 
-        // Home
         document.getElementById('disp-lvl').innerText = char.lv;
         document.getElementById('disp-name').innerText = tmpl.name;
-        document.getElementById('disp-steps').innerText = state.total; // 本日の歩数ロジックは省略し累計表示とします
+        document.getElementById('disp-steps').innerText = state.total;
         document.getElementById('disp-next').innerText = req - char.exp;
         
         document.getElementById('st-hp').innerText = stats.hp;
@@ -470,15 +413,11 @@
         document.getElementById('st-atk').innerText = stats.atk;
         document.getElementById('st-def').innerText = stats.def;
         
-        // Sprite
-        const sp = document.getElementById('home-char');
-        sp.className = `sprite char-main ${tmpl.skinBase}-walk`; // 動かす
+        // ホーム画面の画像設定
+        const homeChar = document.getElementById('home-char');
+        homeChar.style.backgroundImage = `url('${tmpl.imgWalk}')`;
+        homeChar.style.filter = tmpl.hueFilter;
         
-        // Background
-        const bg = document.getElementById('home-bg');
-        bg.className = (state.cleared >= 5) ? 'hero-stage bg-town' : 'hero-stage bg-forest';
-
-        // Gacha/History
         document.getElementById('stone-cnt').innerText = state.stones;
         document.getElementById('hist-total').innerText = state.total;
         document.getElementById('hist-stage').innerText = state.cleared;
@@ -487,19 +426,7 @@
         renderCharList();
     }
 
-    // --- Image Loader ---
-    function loadSprite(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                document.documentElement.style.setProperty('--sprite-url', `url(${e.target.result})`);
-                alert("画像を適用しました！");
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    // --- Battle System ---
+    // --- Battle ---
     function renderStageList() {
         const list = document.getElementById('stage-list');
         list.innerHTML = "";
@@ -523,54 +450,55 @@
         const char = getActiveChar();
         const cStats = getStats(char);
         const cTmpl = CHARS[char.type];
-        
         const eTmpl = ENEMIES[(stg-1)%4];
-        const grow = Math.pow(1.15, stg-1);
-        let enemy = { 
-            hp: Math.floor(eTmpl.hp * grow), 
-            atk: Math.floor(eTmpl.atk * grow),
-            max: Math.floor(eTmpl.hp * grow)
-        };
-
-        // Setup View
-        document.getElementById('btl-p').className = `sprite battler p ${cTmpl.skinBase}-idle`;
-        document.getElementById('btl-e').className = `sprite battler e ${eTmpl.skin}`;
         
-        let turn = 0;
+        const grow = Math.pow(1.15, stg-1);
+        let enemy = { hp: Math.floor(eTmpl.hp * grow), atk: Math.floor(eTmpl.atk * grow) };
+
+        // 画像セット
+        const pEl = document.getElementById('btl-p');
+        const eEl = document.getElementById('btl-e');
+        
+        pEl.style.backgroundImage = `url('${cTmpl.imgIdle}')`;
+        pEl.style.filter = cTmpl.hueFilter;
+        eEl.style.backgroundImage = `url('${eTmpl.img}')`;
+        
         let pHp = cStats.hp;
         
-        // Battle Loop
         window.btlTimer = setInterval(() => {
-            turn++;
-            
             // Player Attack
             const dmg = Math.max(1, Math.floor(cStats.atk * (0.9 + Math.random()*0.2)));
             enemy.hp -= dmg;
             
-            // Anim
-            const pEl = document.getElementById('btl-p');
-            pEl.className = `sprite battler p ${cTmpl.skinBase}-attack`;
-            setTimeout(()=> pEl.className = `sprite battler p ${cTmpl.skinBase}-idle`, 300);
-            showDmg(document.getElementById('btl-e'), dmg, false);
+            // Anim: Attack image swap
+            pEl.style.backgroundImage = `url('${cTmpl.imgAtk}')`;
+            pEl.classList.add('anim-attack');
+            setTimeout(()=> {
+                pEl.style.backgroundImage = `url('${cTmpl.imgIdle}')`;
+                pEl.classList.remove('anim-attack');
+            }, 300);
             
-            log.innerHTML = `<span style="color:#4caf50">あなた: ${dmg}ダメ</span> (敵残:${Math.max(0,enemy.hp)})<br>` + log.innerHTML;
+            showDmg(document.querySelector('.battler-box.e'), dmg, 'dmg-player');
+            // 敵にダメージ演出
+            eEl.classList.add('anim-damage');
+            setTimeout(()=>eEl.classList.remove('anim-damage'), 400);
+
+            log.innerHTML = `<span style="color:#4caf50">あなた: ${dmg}</span> (敵:${Math.max(0,enemy.hp)})<br>` + log.innerHTML;
             
-            if(enemy.hp <= 0) {
-                clearInterval(window.btlTimer);
-                win(stg);
-                return;
-            }
+            if(enemy.hp <= 0) { clearInterval(window.btlTimer); win(stg); return; }
 
             // Enemy Turn
             setTimeout(() => {
                 const eDmg = Math.max(1, Math.floor(enemy.atk - cStats.def/2));
                 pHp -= eDmg;
                 
-                showDmg(document.getElementById('btl-p'), eDmg, true);
-                document.getElementById('app-container').classList.add('shake-screen');
-                setTimeout(()=>document.getElementById('app-container').classList.remove('shake-screen'), 400);
+                showDmg(document.querySelector('.battler-box.p'), eDmg, 'dmg-enemy');
+                
+                // 味方ダメージ演出
+                pEl.classList.add('anim-damage');
+                setTimeout(()=>pEl.classList.remove('anim-damage'), 400);
 
-                log.innerHTML = `<span style="color:#e74c3c">敵: ${eDmg}ダメ</span> (残HP:${Math.max(0,pHp)})<br>` + log.innerHTML;
+                log.innerHTML = `<span style="color:#e74c3c">敵: ${eDmg}</span> (残:${Math.max(0,pHp)})<br>` + log.innerHTML;
                 
                 if(pHp <= 0) {
                     clearInterval(window.btlTimer);
@@ -580,12 +508,13 @@
         }, 1500);
     }
 
-    function showDmg(target, val, isCrit) {
-        const rect = target.getBoundingClientRect();
+    function showDmg(targetBox, val, typeClass) {
+        if(!targetBox) return;
+        const rect = targetBox.getBoundingClientRect();
         const el = document.createElement('div');
-        el.className = isCrit ? 'dmg-popup dmg-crit' : 'dmg-popup';
+        el.className = `dmg-popup ${typeClass}`;
         el.innerText = val;
-        el.style.left = (rect.left + 20) + "px";
+        el.style.left = (rect.left + rect.width/2 - 50) + "px";
         el.style.top = rect.top + "px";
         document.body.appendChild(el);
         setTimeout(()=>el.remove(), 800);
@@ -595,7 +524,6 @@
         const log = document.getElementById('battle-log');
         const getStones = Math.floor(Math.random()*3)+1;
         log.innerHTML = `<strong style="color:gold">勝利！ 石+${getStones}</strong><br>` + log.innerHTML;
-        
         if(stg > state.cleared) state.cleared = stg;
         state.stones += getStones;
         save();
@@ -607,27 +535,23 @@
         updateUI();
     }
 
-    // --- Gacha Logic ---
+    // --- Gacha ---
     let pendingGachaResult = null;
-
     function startGacha() {
         if(state.stones < 5) { alert("石が足りません"); return; }
         state.stones -= 5;
         save();
         
-        // UI Reset
         document.getElementById('gacha-ui').style.display = 'flex';
         document.getElementById('gacha-stone').style.display = 'block';
         document.getElementById('gacha-reveal').classList.remove('show');
-        document.getElementById('gacha-glow').className = 'gacha-glow'; // reset
+        document.getElementById('gacha-glow').className = 'gacha-glow';
         
-        // Decide Result
         const r = Math.random()*100;
         let type = 'villager';
         if(r < 8) type = 'hero';
         else if(r < 20) type = 'mage';
         else if(r < 40) type = 'warrior';
-        
         pendingGachaResult = type;
     }
 
@@ -635,18 +559,15 @@
         const type = pendingGachaResult;
         const rarity = CHARS[type].rarity;
         
-        // Glow Effect
         const glow = document.getElementById('gacha-glow');
         glow.style.opacity = 1;
-        if(rarity === 'SSR') glow.classList.add('glow-rainbow');
-        else if(rarity === 'SR') glow.classList.add('glow-gold');
-        else glow.classList.add('glow-blue');
+        if(rarity === 'SSR') glow.classList.add('glow-ssr');
+        else if(rarity === 'SR') glow.classList.add('glow-sr');
+        else glow.classList.add('glow-n');
         
-        // Shake Stone
         const stone = document.getElementById('gacha-stone');
-        stone.style.animation = "shake 0.5s infinite";
+        stone.style.animation = "shake 0.5s infinite"; // 揺らす
 
-        // Reveal Delay
         setTimeout(() => {
             stone.style.display = 'none';
             showResult(type);
@@ -662,11 +583,10 @@
         document.getElementById('new-char-rare').style.color = (tmpl.rarity==='SSR' ? 'gold' : 'white');
         
         const img = document.getElementById('new-char-img');
-        img.className = `sprite ${tmpl.skinBase}-walk`; // show walking char
+        img.style.backgroundImage = `url('${tmpl.imgWalk}')`;
+        img.style.filter = tmpl.hueFilter;
         
         rev.classList.add('show');
-        
-        // Add to roster
         state.roster.push({ id: Date.now(), type: type, lv: 1, exp: 0 });
         save();
     }
@@ -688,7 +608,6 @@
         });
     }
 
-    // --- Char Select ---
     function openCharSelect() {
         document.getElementById('char-modal').style.display = 'flex';
         const div = document.getElementById('select-list');
@@ -701,21 +620,16 @@
             btn.style.background = (c.id === state.activeId) ? "#2ecc71" : "#fff";
             btn.style.color = (c.id === state.activeId) ? "#fff" : "#333";
             btn.innerHTML = `${tmpl.name} (Lv.${c.lv})`;
-            btn.onclick = () => {
-                state.activeId = c.id;
-                save();
-                document.getElementById('char-modal').style.display = 'none';
-            };
+            btn.onclick = () => { state.activeId = c.id; save(); document.getElementById('char-modal').style.display = 'none'; };
             div.appendChild(btn);
         });
     }
 
-    // --- Nav ---
     function nav(id, el) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen-'+id).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
+        if(el) el.classList.add('active');
     }
 
     init();
