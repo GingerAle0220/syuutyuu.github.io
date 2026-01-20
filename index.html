@@ -3,954 +3,736 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Study Bank v4.1</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>花ちゃんウォーク</title>
+    
+    <!-- Google Fonts: Pixel Style -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+
     <style>
-        /* --- デザイン定義 --- */
         :root {
-            --bg-color: #F5F7FA;
-            --text-color: #2C3E50;
-            --accent-color: #6AB187;
-            --danger-color: #e74c3c;
-            --bonus-color: #f39c12;
-            --card-bg: #FFFFFF;
+            --primary: #ff7e79;
+            --secondary: #5bc0de;
+            --bg-color: #fce4ec;
+            --panel-bg: #fff;
+            --text-color: #2c3e50;
+            --border-color: #4a4a4a;
+            --font-pixel: 'DotGothic16', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Kaku Gothic ProN", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: var(--font-pixel);
+            background-color: #8fb3e6; /* Map water color */
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px);
+            background-size: 20px 20px; /* Grid Map Effect */
             margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
+            padding: 0 0 90px 0;
+            color: var(--text-color);
+            overflow-x: hidden;
         }
 
         .container {
-            width: 100%;
-            max-width: 480px;
-            text-align: center;
-            padding-bottom: 90px;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px;
         }
-
-        h1 { font-size: 1.4rem; margin-bottom: 1.5rem; opacity: 0.9; }
-
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* UIパーツ */
-        .card {
-            background: var(--card-bg);
-            border: 2px solid var(--text-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 4px 4px 0px rgba(44, 62, 80, 0.1);
+        
+        /* Pixel Art UI Borders */
+        .pixel-box {
+            background: var(--panel-bg);
+            border: 4px solid var(--border-color);
+            border-radius: 4px; /* Slightly rounded for modern feel */
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+            margin-bottom: 15px;
+            padding: 15px;
             position: relative;
         }
 
-        .label { font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
-        .big-number { font-size: 2.5rem; font-weight: bold; }
-        .unit { font-size: 1rem; margin-left: 5px; }
-
-        input[type="text"], input[type="number"], select, textarea {
-            width: 100%; padding: 12px; font-size: 1rem;
-            border: 2px solid var(--text-color); border-radius: 8px; box-sizing: border-box;
-            margin-bottom: 10px; text-align: center; outline: none; background: #FAFAFA; color: var(--text-color);
+        .btn-pixel {
+            font-family: var(--font-pixel);
+            background: var(--primary);
+            color: white;
+            border: 2px solid var(--border-color);
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-shadow: 1px 1px 0 #000;
+        }
+        .btn-pixel:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.3);
         }
 
-        button {
-            width: 100%; padding: 14px; font-size: 1rem; font-weight: bold; color: white;
-            border: none; border-radius: 8px; cursor: pointer; margin-bottom: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.1s;
+        /* --- Sprite System --- */
+        /* Generated Image URL */
+        :root {
+            --sprite-url: url('http://googleusercontent.com/image_generation_content/0');
         }
-        button:active { transform: translateY(2px); }
 
-        .btn-study { background-color: var(--text-color); }
-        .btn-game { background-color: var(--accent-color); }
-        .btn-stop { background-color: var(--danger-color); }
-        .btn-bonus { background-color: var(--bonus-color); }
+        .sprite-container {
+            width: 128px;
+            height: 128px;
+            display: inline-block;
+            position: relative;
+            image-rendering: pixelated;
+        }
+
+        .sprite {
+            width: 100%;
+            height: 100%;
+            background-image: var(--sprite-url);
+            background-repeat: no-repeat;
+            background-size: 200% 200%; /* Adjust based on generated image layout */
+            /* Assuming 2 rows, 3-4 columns logic. 
+               We will use specific classes to crop. 
+               Since AI image layout varies, we use approximate percentages. */
+        }
+
+        /* Hero Sprites (Top Row) */
+        .hero-idle { background-position: 0% 0%; }
+        .hero-walk { background-position: 50% 0%; animation: bobbing 0.5s infinite steps(2); }
+        .hero-attack { background-position: 100% 0%; }
+
+        /* Enemy Sprites (Bottom Row) */
+        .enemy-slime { background-position: 0% 100%; }
+        .enemy-goblin { background-position: 33% 100%; }
+        .enemy-king { background-position: 66% 100%; transform: scale(1.2); }
+        .enemy-dragon { background-position: 100% 100%; transform: scale(1.5); }
+
+        @keyframes bobbing { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+        /* --- Header --- */
+        .header {
+            text-align: center;
+            background: #fffbe6;
+        }
+        .step-count {
+            font-size: 3rem;
+            color: #d32f2f;
+            text-shadow: 2px 2px 0px #ffcdd2;
+            line-height: 1;
+        }
+        .level-tag {
+            background: var(--secondary);
+            color: white;
+            padding: 2px 8px;
+            border: 2px solid var(--border-color);
+            font-size: 0.9rem;
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+
+        /* --- Battle Screen --- */
+        .battle-stage {
+            height: 250px;
+            background: #a5d6a7; /* Grass */
+            background-image: 
+                repeating-linear-gradient(#81c784 0 2px, transparent 2px 100%),
+                repeating-linear-gradient(90deg, #81c784 0 2px, transparent 2px 100%);
+            background-size: 40px 40px;
+            border: 4px solid var(--border-color);
+            position: relative;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
         
-        .btn-undo {
-            background-color: #95a5a6; margin-top: 5px; width: auto; 
-            display: inline-block; padding: 8px 20px; font-size: 0.9rem;
+        /* Battle Effects */
+        .damage-popup {
+            position: absolute;
+            color: #fff;
+            font-size: 2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            pointer-events: none;
+            animation: popUp 0.8s forwards;
+            z-index: 100;
+        }
+        .damage-player { color: #ffeb3b; }
+        .damage-enemy { color: #fff; }
+
+        @keyframes popUp {
+            0% { transform: translate(-50%, 0) scale(0.5); opacity: 0; }
+            20% { transform: translate(-50%, -30px) scale(1.5); opacity: 1; }
+            100% { transform: translate(-50%, -60px) scale(1); opacity: 0; }
+        }
+
+        .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        .attack-anim-right { animation: lungeRight 0.3s forwards; }
+        .attack-anim-left { animation: lungeLeft 0.3s forwards; }
+        
+        @keyframes lungeRight { 0% { transform: translateX(0); } 50% { transform: translateX(30px); } 100% { transform: translateX(0); } }
+        @keyframes lungeLeft { 0% { transform: translateX(0); } 50% { transform: translateX(-30px); } 100% { transform: translateX(0); } }
+
+        .battle-log-container {
+            background: #222;
+            border: 4px solid #fff;
+            color: #0f0;
+            height: 120px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.8rem;
+            box-shadow: inset 0 0 10px #000;
+            font-family: monospace;
+        }
+
+        /* --- Gacha Effects --- */
+        .gacha-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
         }
         
-        .undo-area {
-            display:none; margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;
-            animation: fadeIn 0.5s;
+        .gacha-ray-container {
+            position: absolute;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            display: none;
+        }
+        .ray {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 200%; height: 20px;
+            background: rgba(255,255,255,0.1);
+            transform-origin: 0% 50%;
+        }
+        .ssr-glow {
+            animation: rainbow 0.5s linear infinite, shake 0.5s infinite;
+        }
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
         }
 
-        /* モーダル */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 300; justify-content: center; align-items: center;
-            animation: fadeIn 0.3s;
+        .gacha-result-text {
+            color: white;
+            font-size: 3rem;
+            text-shadow: 0 0 20px gold;
+            opacity: 0;
+            transform: scale(0);
         }
-        .modal-content {
-            background: white; width: 85%; max-width: 400px; max-height: 80vh; overflow-y: auto;
-            border-radius: 12px; padding: 25px; position: relative; text-align: left;
-        }
-        .close-btn { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
+        .show-result { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn { 100% { opacity: 1; transform: scale(1); } }
 
-        /* 左上のアイコン群 */
-        .icon-btn {
-            position: fixed; left: 15px; width: 40px; height: 40px;
-            border-radius: 50%; background: white; border: 2px solid var(--text-color);
-            color: var(--text-color); font-weight: bold; font-size: 1.2rem;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; z-index: 200; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .help-btn { top: 15px; }
-        .bag-btn { top: 65px; background: var(--bonus-color); color: white; border-color: #d35400; }
-
-        /* ボーナス表示 */
-        .bonus-badge {
-            background: var(--bonus-color); color: white; padding: 5px 10px;
-            border-radius: 20px; font-size: 0.8rem; font-weight: bold;
-            display: inline-block; margin-bottom: 10px; animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        /* ナビゲーション */
+        /* --- Navigation --- */
         .nav-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; background: white;
-            display: flex; justify-content: space-around; padding: 12px 0;
-            border-top: 2px solid var(--text-color); z-index: 100;
+            position: fixed;
+            bottom: 10px; left: 10px; right: 10px;
+            background: var(--panel-bg);
+            border: 4px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 500;
         }
         .nav-item {
-            font-size: 0.8rem; color: #aaa; cursor: pointer; flex: 1; text-align: center;
-            display: flex; flex-direction: column; align-items: center;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #888;
+            cursor: pointer;
+            width: 25%;
         }
-        .nav-item span { font-size: 1.2rem; margin-bottom: 2px; }
-        .nav-item.active { color: var(--text-color); font-weight: bold; }
+        .nav-icon { font-size: 1.8rem; display: block; }
+        .nav-item.active { color: var(--primary); font-weight: bold; transform: translateY(-2px); }
 
-        /* 履歴・ページネーション */
-        .history-list { list-style: none; padding: 0; max-height: 200px; overflow-y:auto; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ddd; font-size: 0.9rem; }
-        .pagination { display: flex; justify-content: space-between; margin-top: 10px; align-items: center;}
-        
-        /* グラフ操作 */
-        .chart-controls { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
-        .chart-date-range { font-size: 0.8rem; font-weight: bold; }
+        /* --- Screens --- */
+        .screen { display: none; animation: slideUp 0.3s ease-out; }
+        .screen.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ログ表示 */
-        .update-log-area {
-            background: rgba(255,255,255,0.8);
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: left;
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 20px;
-        }
-        .log-date { font-size: 0.75rem; color: #666; display: block; margin-top: 8px; }
-        .log-ver { color: var(--accent-color); font-weight: bold; margin-right: 5px; }
-
-        .negative { color: var(--danger-color) !important; }
-        #loginPage { margin-top: 5vh; }
     </style>
 </head>
 <body>
 
-<!-- アイコンボタン -->
-<div class="icon-btn help-btn" onclick="openModal('helpModal')">？</div>
-<div class="icon-btn bag-btn" onclick="openBag()">🎒</div>
-
-<!-- ヘルプモーダル -->
-<div id="helpModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('helpModal')">×</span>
-        <h2 style="margin-top:0; text-align:center;">使い方ガイド</h2>
-        <p><b>🏠 ホーム</b><br>勉強時間を記録します。間違えた時は、直後なら「↩️ 取り消し」ボタンで削除できます。</p>
-        <p><b>🎒 リュック</b><br>累計で3時間勉強するごとに「2倍チケット」を1枚プレゼント！ここぞという時に使おう。</p>
-        <p><b>👛 帳簿</b><br>使ったお金を記録します。収支がマイナスになるとペナルティがあるので注意！</p>
-        <p><b>🎮 ゲーム</b><br>貯めた時間で遊べます。「記録のみ」から手動入力も可能です。</p>
-        <p><b>📊 記録</b><br>過去のグラフを見ることができます。矢印ボタンで週を移動できます。</p>
-    </div>
-</div>
-
-<!-- リュック(持ち物)モーダル -->
-<div id="bagModal" class="modal">
-    <div class="modal-content" style="text-align:center;">
-        <span class="close-btn" onclick="closeModal('bagModal')">×</span>
-        <h2 style="margin-top:0;">🎒 持ち物</h2>
-        <div class="card" style="background:#fff8e1; border-color:#f39c12;">
-            <span class="label" style="color:#d35400;">お金2倍チケット</span>
-            <span class="big-number" id="ticketCountDisplay">0</span><span class="unit">枚</span>
-            <p style="font-size:0.85rem; color:#666; margin:10px 0;">
-                勉強3時間につき1枚配布。<br>使うと24時間、獲得金額が2倍！
-            </p>
-            <button class="btn-bonus" onclick="useTicket()">チケットを使う</button>
-        </div>
-        <p id="bonusStatusText" style="font-size:0.9rem; font-weight:bold; color:var(--bonus-color);"></p>
-    </div>
-</div>
-
-<!-- Tipsモーダル -->
-<div id="tipsModal" class="modal">
-    <div class="modal-content" style="background:#f0f8ff; border: 4px solid var(--accent-color);">
-        <span class="close-btn" onclick="closeModal('tipsModal')">×</span>
-        <h3 style="margin-top:0; color:var(--text-color); text-align:center;">💡 Today's Tip</h3>
-        <p id="tipContent" style="font-size:1rem; line-height:1.6; margin:20px 0; white-space: pre-wrap;"></p>
-        <div id="tipAuthor" style="text-align:right; font-size:0.9rem; color:#666; font-weight:bold;"></div>
-        <button class="btn-study" onclick="closeModal('tipsModal')" style="margin-top:20px;">閉じる</button>
-    </div>
-</div>
-
-<!-- バックアップモーダル -->
-<div id="backupModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeModal('backupModal')">×</span>
-        <h2>💾 データ管理</h2>
-        <textarea id="backupText" rows="6" readonly onclick="this.select()"></textarea>
-        <button class="btn-study" onclick="copyBackup()">コピーする</button>
-        <hr>
-        <textarea id="restoreText" rows="4" placeholder="ここに貼り付け"></textarea>
-        <button class="btn-stop" onclick="restoreData()">復元する</button>
-    </div>
-</div>
-
 <div class="container">
+    <!-- Home Screen -->
+    <div id="screen-home" class="screen active">
+        <div class="pixel-box header">
+            <div class="level-tag">Lv.<span id="char-level">1</span></div>
+            <div>今日の歩数</div>
+            <div class="step-count"><span id="today-steps">0</span></div>
+            <div style="font-size:0.8rem; color:#666;">NEXT: <span id="next-level-steps">1000</span>歩</div>
+        </div>
 
-    <!-- 1. ログイン -->
-    <div id="loginPage" class="page active">
-        <h1>STUDY BANK v4.1</h1>
-        <div class="card">
-            <p class="label">ユーザー名を入力</p>
-            <form onsubmit="login(event)">
-                <input type="text" id="usernameInput" placeholder="名前" maxlength="10" required>
-                <button type="submit" class="btn-study">スタート</button>
-            </form>
-            <div style="margin-top:10px;">
-                <small onclick="openModal('backupModal')" style="text-decoration:underline; cursor:pointer; color:#666;">データのバックアップ・復元</small>
+        <button id="sensor-btn" class="btn-pixel" style="width:100%; margin-bottom:15px; background: #9575cd;" onclick="toggleSensor()">
+            📱 計測モード開始
+        </button>
+
+        <div class="pixel-box" style="text-align:center; background: #fffbe6;">
+            <div style="font-size:0.9rem; margin-bottom:10px; color:#555;">花ちゃん (あなた)</div>
+            <div class="sprite-container">
+                <div id="char-sprite" class="sprite hero-idle"></div>
+            </div>
+            <div style="margin-top:10px; font-size:0.8rem; color:#888;">
+                ※歩くとアニメーションします
             </div>
         </div>
 
-        <!-- アップデート履歴 (全履歴) -->
-        <div class="update-log-area">
-            <h3 style="margin-top:0; text-align:center; border-bottom:1px solid #ddd; padding-bottom:5px;">📜 アップデート履歴</h3>
-            
-            <span class="log-date">2026/01/19</span>
-            <div><span class="log-ver">v4.1</span>取り消し機能の修正、Tips大幅増量(90種)、グラフの週移動機能を追加</div>
+        <div class="pixel-box">
+            <h3 style="margin:0 0 10px 0; border-bottom:2px dashed #ddd;">ステータス</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>HP: <strong id="stat-hp">100</strong></div>
+                <div>MP: <strong id="stat-mp">10</strong></div>
+                <div>攻: <strong id="stat-atk">10</strong></div>
+                <div>防: <strong id="stat-def">10</strong></div>
+            </div>
+        </div>
 
-            <span class="log-date">2026/01/18</span>
-            <div><span class="log-ver">v4.0</span>「2倍チケット」機能、豆知識表示、Undo機能の実装</div>
-
-            <span class="log-date">2026/01/15</span>
-            <div><span class="log-ver">v3.4</span>ヘルプガイド(？ボタン)の追加、UI調整</div>
-
-            <span class="log-date">2026/01/12</span>
-            <div><span class="log-ver">v3.3</span>「コース選択機能(厳しめ〜ぬるま湯)」の実装</div>
-
-            <span class="log-date">2026/01/10</span>
-            <div><span class="log-ver">v3.2</span>帳簿履歴のページネーション対応(100件まで保存)</div>
-
-            <span class="log-date">2026/01/05</span>
-            <div><span class="log-ver">v3.1</span>お小遣い計算レートの調整 (1分1.5円化)</div>
-
-            <span class="log-date">2025/12/28</span>
-            <div><span class="log-ver">v3.0</span>帳簿(Wallet)機能、ペナルティシステム、バックグラウンドタイマーの実装</div>
-
-            <span class="log-date">2025/12/20</span>
-            <div><span class="log-ver">v2.0</span>ゲームタイマー機能、グラフ表示、ユーザーログイン機能の実装</div>
-
-            <span class="log-date">2025/12/10</span>
-            <div><span class="log-ver">v1.0</span>Study Bank リリース。勉強時間を貯金して遊ぶ基本機能の実装</div>
+        <div class="pixel-box">
+            <h4 style="margin:0 0 5px 0;">📝 手動入力</h4>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="manual-steps" placeholder="歩数" style="flex:1; padding:8px; border:2px solid #ccc; font-family:var(--font-pixel);">
+                <button class="btn-pixel" style="padding:5px 15px; font-size:1rem;" onclick="addStepsManual()">OK</button>
+            </div>
         </div>
     </div>
 
-    <!-- 2. ホーム -->
-    <div id="homePage" class="page">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h1 style="margin:0;">HOME</h1>
-            <small onclick="logout()" style="text-decoration:underline; cursor:pointer; color:#999;">Logout</small>
+    <!-- Battle Screen -->
+    <div id="screen-battle" class="screen">
+        <div class="pixel-box" style="background:#fffbe6;">
+            <h2 style="margin:0;">⚔️ クエスト選択</h2>
+            <div id="stage-container" style="margin-top:10px;">
+                <!-- JS Generated -->
+            </div>
         </div>
-
-        <div id="bonusIndicator" class="bonus-badge" style="display:none;">
-            ✨ お金2倍モード発動中！
-        </div>
-
-        <div class="card">
-            <span class="label">遊べる時間 (残高)</span>
-            <span class="big-number" id="balanceDisplay">0</span><span class="unit">分</span>
-        </div>
-
-        <div class="card" style="border-color: var(--accent-color); cursor:pointer;" onclick="showPage('walletPage', document.getElementById('navWallet'))">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <span class="label" style="color:var(--accent-color);">現在のお財布</span>
-                    <span class="big-number" style="font-size:1.8rem; color:var(--accent-color);" id="moneyDisplayHome">0</span><span class="unit">円</span>
+        
+        <div id="battle-scene" style="display:none;">
+            <div class="battle-stage" id="battle-stage">
+                <div style="text-align:center;">
+                    <div class="sprite-container">
+                        <div id="battle-hero" class="sprite hero-idle"></div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.5); color:white; padding:2px; font-size:0.8rem; border-radius:4px;">YOU</div>
                 </div>
-                <span style="font-size:1.5rem;">👛 &gt;</span>
+                <div style="text-align:center;">
+                    <div class="sprite-container">
+                        <div id="battle-enemy" class="sprite enemy-slime"></div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.5); color:white; padding:2px; font-size:0.8rem; border-radius:4px;" id="enemy-name">敵</div>
+                </div>
             </div>
-        </div>
-
-        <div class="card">
-            <span class="label">✏️ 勉強を記録</span>
-            <div style="margin-bottom:15px; text-align:left;">
-                <label class="label" style="font-size:0.8rem;">コース選択</label>
-                <select id="courseSelect" onchange="changeCourse()">
-                    <option value="hard">🔥 厳しめ (0.5円/分)</option>
-                    <option value="normal">🚶 普通 (1.0円/分)</option>
-                    <option value="easy">♨️ ぬるま湯 (1.5円/分)</option>
-                </select>
-            </div>
-            <input type="number" id="studyInput" placeholder="分" min="1">
-            <button class="btn-study" onclick="addStudy()">＋ 記録する</button>
             
-            <!-- Undo (Study) -->
-            <div id="studyUndoArea" class="undo-area">
-                <span style="font-size:0.8rem; color:#666;">直前の記録(勉強)を取り消しますか？</span><br>
-                <button class="btn-undo" onclick="undoLastAction()">↩️ 取り消す</button>
-            </div>
+            <div class="pixel-box battle-log-container" id="battle-log"></div>
+            
+            <button class="btn-pixel" onclick="closeBattle()" style="width:100%; background:#7f8c8d;">戻る</button>
         </div>
     </div>
 
-    <!-- 3. ウォレット -->
-    <div id="walletPage" class="page">
-        <h1>WALLET</h1>
-        <div class="card">
-            <span class="label">残高</span>
-            <span class="big-number" id="walletBalanceDisplay">0</span><span class="unit">円</span>
-            <div id="penaltyWarning" style="display:none; color:var(--danger-color); font-size:0.85rem; margin-top:10px; font-weight:bold;">
-                ⚠️ 残高がマイナスです！明日ペナルティ発生！
+    <!-- Gacha Screen -->
+    <div id="screen-gacha" class="screen">
+        <div class="pixel-box" style="text-align:center; background:#fff0f5;">
+            <h2 style="color:#e91e63;">💎 召喚</h2>
+            <div style="font-size:1.5rem; margin:15px 0;">
+                所持石: <span id="stone-count" style="color:#2196f3; font-weight:bold;">0</span>
             </div>
+            <p style="font-size:0.9rem;">5個で1回召喚できます</p>
+            <button onclick="pullGacha()" class="btn-pixel" style="width:100%; font-size:1.5rem; padding:20px;">
+                ガチャを回す！
+            </button>
         </div>
-        <div class="card">
-            <span class="label">💸 支出を記録</span>
-            <input type="text" id="expenseItem" placeholder="用途" required>
-            <input type="number" id="expenseCost" placeholder="金額" min="1">
-            <button class="btn-study" style="background-color:#7f8c8d;" onclick="addExpense()">－ 記録する</button>
-            
-            <!-- Undo (Expense) -->
-            <div id="expenseUndoArea" class="undo-area">
-                <span style="font-size:0.8rem; color:#666;">直前の記録(支出)を取り消しますか？</span><br>
-                <button class="btn-undo" onclick="undoLastAction()">↩️ 取り消す</button>
-            </div>
-        </div>
-        <div class="card">
-            <span class="label">履歴</span>
-            <ul id="expenseList" class="history-list"></ul>
-            <div class="pagination">
-                <button class="btn-undo" onclick="changeWalletPage(-1)">前へ</button>
-                <span id="pageIndicator">1/1</span>
-                <button class="btn-undo" onclick="changeWalletPage(1)">次へ</button>
-            </div>
+        
+        <div class="pixel-box">
+            <h3>仲間一覧</h3>
+            <ul id="inventory-list" style="padding-left:20px; margin:0;"></ul>
         </div>
     </div>
 
-    <!-- 4. ゲーム -->
-    <div id="timerPage" class="page">
-        <h1>GAME</h1>
-        <div class="card">
-            <div id="timerSetup">
-                <span class="label">⏱️ タイマー設定</span>
-                <input type="number" id="timerInput" placeholder="分" min="1">
-                <button class="btn-game" onclick="startTimer()">▶ スタート</button>
-            </div>
-            <div id="timerActive" style="display:none;">
-                <span class="label" style="color:var(--accent-color);">PLAYING...</span>
-                <div id="endTimeDisplay" style="font-size:0.9rem;"></div>
-                <div id="timerDisplay">00:00</div>
-                <button class="btn-stop" onclick="stopTimerManual()">■ 終了</button>
-            </div>
-        </div>
-        <div class="card">
-            <span class="label">📝 手動で記録</span>
-            <input type="number" id="manualGameInput" placeholder="分" min="1">
-            <button class="btn-game" style="opacity:0.7;" onclick="addGameManual()">記録のみ</button>
-            
-            <!-- Undo (Game) -->
-            <div id="gameUndoArea" class="undo-area">
-                <span style="font-size:0.8rem; color:#666;">直前の記録(ゲーム)を取り消しますか？</span><br>
-                <button class="btn-undo" onclick="undoLastAction()">↩️ 取り消す</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5. データ -->
-    <div id="statsPage" class="page">
-        <h1>DATA</h1>
-        <div class="card">
-            <!-- グラフ操作ボタン -->
-            <div class="chart-controls">
-                <button class="btn-undo" style="width:auto; margin:0;" onclick="shiftChartWeek(1)">＜ 前の週</button>
-                <span id="chartRangeDisplay" class="chart-date-range"></span>
-                <button class="btn-undo" style="width:auto; margin:0;" onclick="shiftChartWeek(-1)">次の週 ＞</button>
-            </div>
-            <canvas id="myChart"></canvas>
-        </div>
-        <div class="card" style="text-align:left;">
-             累計勉強: <b id="totalStudyStat">0</b> 分<br>
-             累計ゲーム: <b id="totalGameStat">0</b> 分
+    <!-- History Screen -->
+    <div id="screen-history" class="screen">
+        <div class="pixel-box">
+            <h2>📜 冒険の記録</h2>
+            <p>累計歩数: <strong id="total-steps">0</strong> 歩</p>
+            <p>到達ステージ: <strong id="cleared-stages">0</strong></p>
         </div>
     </div>
 </div>
 
-<div class="nav-bar" id="navBar" style="display:none;">
-    <div class="nav-item active" onclick="showPage('homePage', this)"><span>🏠</span>HOME</div>
-    <div class="nav-item" id="navWallet" onclick="showPage('walletPage', this)"><span>👛</span>帳簿</div>
-    <div class="nav-item" onclick="showPage('timerPage', this)"><span>🎮</span>ゲーム</div>
-    <div class="nav-item" onclick="showPage('statsPage', this)"><span>📊</span>記録</div>
+<!-- Gacha Animation Overlay -->
+<div id="gacha-overlay" class="gacha-overlay" onclick="closeGachaResult()">
+    <div id="gacha-rays" class="gacha-ray-container">
+        <!-- Rays JS generated -->
+    </div>
+    <div id="gacha-result-text" class="gacha-result-text">
+        SSR<br>伝説の勇者
+    </div>
+    <div style="margin-top:50px; color:white; font-size:0.8rem; opacity:0.8;">タップして閉じる</div>
+</div>
+
+<!-- Navigation -->
+<div class="nav-bar">
+    <div class="nav-item active" onclick="switchScreen('home', this)">
+        <span class="nav-icon">🏠</span>ホーム
+    </div>
+    <div class="nav-item" onclick="switchScreen('battle', this)">
+        <span class="nav-icon">⚔️</span>バトル
+    </div>
+    <div class="nav-item" onclick="switchScreen('gacha', this)">
+        <span class="nav-icon">💎</span>ガチャ
+    </div>
+    <div class="nav-item" onclick="switchScreen('history', this)">
+        <span class="nav-icon">📜</span>記録
+    </div>
 </div>
 
 <script>
-// --- Tipsデータ (90個以上) ---
-const TIPS_DB = [
-    // 花 (季節・場所・花言葉)
-    "【桜 (春/公園)】日本の春の象徴。花言葉は「精神の美」「優美な女性」。散り際の美しさから、武士道とも結びつけられました。",
-    "【チューリップ (春/花壇)】オランダが有名ですが原産はトルコ。花言葉は色で違い、赤は「愛の告白」、黄色は「望みのない恋」です。",
-    "【ネモフィラ (春/丘)】ひたち海浜公園が有名。北米原産で、花言葉は「可憐」「どこでも成功」。澄んだ青色が魅力です。",
-    "【ひまわり (夏/畑)】太陽を追って回ることから名付けられました。花言葉は「あなただけを見つめる」。実は小さな花の集合体です。",
-    "【朝顔 (夏/庭)】早朝に咲いて昼にはしぼむ儚い花。花言葉は「はかない恋」「固い絆」。江戸時代に品種改良ブームがありました。",
-    "【コスモス (秋/草原)】メキシコ原産で、日本には明治時代に渡来。花言葉は「乙女の真心」。秋風に揺れる姿が風情があります。",
-    "【彼岸花 (秋/田んぼ)】お彼岸の頃に咲く真っ赤な花。毒があり、モグラ除けとして墓地や田んぼの畦道に植えられました。花言葉は「情熱」「独立」。",
-    "【金木犀 (秋/庭)】甘い香りが秋の訪れを告げます。花言葉は「謙虚」「気高い人」。中国ではお酒やお茶の香り付けにも使われます。",
-    "【ポインセチア (冬/室内)】クリスマスの定番。赤い部分は花ではなく葉っぱです。花言葉は「祝福」「聖なる願い」。",
-    "【梅 (冬〜春/庭)】寒さの中でいち早く咲く縁起の良い花。花言葉は「高潔」「忍耐」。学問の神様、菅原道真公が愛した花です。",
-    "【パンジー (春/花壇)】人の顔のように見える模様が特徴。花言葉は「もの思い」「私を思って」。フランス語の「パンセ(思考)」が由来。",
-    "【カーネーション (春/贈り物)】母の日の定番。赤は「母への愛」、白は「亡き母を偲ぶ」。古代ギリシャ時代から栽培されています。",
-    "【紫陽花 (梅雨/庭)】土の酸性度で色が変わる不思議な花。酸性だと青、アルカリ性だと赤になります。花言葉は「移り気」。",
-    "【ラベンダー (初夏/北海道)】リラックス効果のある香りが特徴。花言葉は「沈黙」「清潔」。北海道富良野のラベンダー畑が有名です。",
-    "【睡蓮 (夏/池)】水面に浮かぶように咲く花。花言葉は「清純な心」「信頼」。古代エジプトでは太陽のシンボルとされました。",
-    "【ススキ (秋/山野)】お月見に欠かせない植物。花言葉は「活力」。魔除けの力があると信じられていました。",
-    "【椿 (冬/庭)】花ごとポトリと落ちるのが特徴。花言葉は「控えめな優しさ」。日本原産で、海外でも「カメリア」として人気。",
-    "【シクラメン (冬/室内)】冬の鉢植えの代表格。花言葉は「遠慮」「内気」。下を向いて咲く姿が恥じらっているように見えるため。",
-    "【ガーベラ (四季/花屋)】明るく陽気な雰囲気の花。花言葉は「希望」「常に前進」。茎の中に空洞があるのが特徴です。",
-    "【バラ (四季/庭)】花の女王。本数で意味が変わり、1本は「一目惚れ」、100本は「100%の愛」。999本は「何度生まれ変わってもあなたを愛する」。",
+    // --- Game State ---
+    let gameState = {
+        totalSteps: 0,
+        todaySteps: 0,
+        level: 1,
+        stones: 5,
+        clearedStages: 0,
+        inventory: [],
+        lastLoginDate: new Date().toLocaleDateString()
+    };
+
+    // Load Data
+    if(localStorage.getItem('hanaWalkData_v3')) {
+        gameState = JSON.parse(localStorage.getItem('hanaWalkData_v3'));
+        if(gameState.lastLoginDate !== new Date().toLocaleDateString()) {
+            gameState.todaySteps = 0;
+            gameState.lastLoginDate = new Date().toLocaleDateString();
+            saveData();
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('hanaWalkData_v3', JSON.stringify(gameState));
+        updateUI();
+    }
+
+    // --- Pedometer Logic ---
+    let isSensing = false;
+    let lastAcc = { x: 0, y: 0, z: 0 };
+    let lastStepTime = 0;
+    const ACC_THRESHOLD = 15;
+
+    function toggleSensor() {
+        const btn = document.getElementById('sensor-btn');
+        if (isSensing) {
+            window.removeEventListener('devicemotion', handleMotion);
+            isSensing = false;
+            btn.innerText = "📱 計測モード開始";
+            btn.style.background = "#9575cd";
+            document.getElementById('char-sprite').className = "sprite hero-idle";
+            return;
+        }
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission().then(r => {
+                if(r==='granted') startSensing();
+                else alert('許可されませんでした');
+            });
+        } else {
+            startSensing();
+        }
+    }
+
+    function startSensing() {
+        window.addEventListener('devicemotion', handleMotion);
+        isSensing = true;
+        const btn = document.getElementById('sensor-btn');
+        btn.innerText = "📡 計測中...";
+        btn.style.background = "#ff4081";
+    }
+
+    function handleMotion(event) {
+        const acc = event.accelerationIncludingGravity;
+        if(!acc) return;
+        const delta = Math.abs(acc.x - lastAcc.x) + Math.abs(acc.y - lastAcc.y) + Math.abs(acc.z - lastAcc.z);
+        const now = Date.now();
+
+        if (delta > ACC_THRESHOLD && (now - lastStepTime > 300)) {
+            addSteps(1);
+            lastStepTime = now;
+            
+            // Walk Animation
+            const sprite = document.getElementById('char-sprite');
+            if(!sprite.classList.contains('hero-walk')) {
+                sprite.className = "sprite hero-walk";
+                clearTimeout(window.walkTimer);
+                window.walkTimer = setTimeout(() => {
+                    if(isSensing) sprite.className = "sprite hero-idle";
+                }, 1000);
+            }
+        }
+        lastAcc = { x: acc.x, y: acc.y, z: acc.z };
+    }
+
+    function addSteps(n) {
+        gameState.todaySteps += n;
+        gameState.totalSteps += n;
+        gameState.level = Math.floor(gameState.totalSteps / 1000) + 1;
+        saveData();
+    }
     
-    // 世界の料理・お菓子
-    "【カヌレ (フランス)】ボルドー地方の焼き菓子。外はカリカリ、中はモチモチ。ワイン作りで余った卵黄を使うために生まれました。",
-    "【ティラミス (イタリア)】「私を元気づけて」という意味のデザート。エスプレッソとマスカルポーネチーズの相性が抜群です。",
-    "【バインミー (ベトナム)】フランスパンにレバーパテや野菜、パクチーを挟んだサンドイッチ。植民地時代の食文化が融合して生まれました。",
-    "【シュトーレン (ドイツ)】クリスマスを待つ間に少しずつ食べる保存食のようなケーキ。ドライフルーツやナッツがぎっしり。",
-    "【マカロン (フランス)】実はイタリア発祥説も。卵白とアーモンドプードルで作る繊細なお菓子。パリジェンヌに大人気。",
-    "【ガパオライス (タイ)】「ガパオ」はホーリーバジルのこと。鶏肉などのバジル炒めご飯です。目玉焼きを添えるのが定番。",
-    "【フィッシュ＆チップス (イギリス)】白身魚のフライとポテトのセット。産業革命時代、労働者の安価なエネルギー源として普及しました。",
-    "【タコス (メキシコ)】トウモロコシ粉の生地(トルティーヤ)で具材を包んだ料理。サルサソースをたっぷりかけて。",
-    "【ピロシキ (ロシア)】具入りの揚げパン、または焼きパン。中身はひき肉、キャベツ、卵、春雨など家庭によって様々。",
-    "【飲茶 (中国)】お茶を飲みながら点心を食べる習慣。広東省で発展しました。シューマイやエビ餃子が人気。",
-    "【パエリア (スペイン)】バレンシア地方の米料理。サフランで黄色く色付けします。本場ではウサギ肉を入れることも。",
-    "【フォー (ベトナム)】米粉で作った平たい麺。牛骨や鶏ガラの優しいスープで食べます。朝食の定番。",
-    "【ケバブ (トルコ)】肉をローストした料理の総称。日本で見かける回転する肉は「ドネルケバブ」と言います。",
-    "【麻婆豆腐 (中国)】四川省発祥。唐辛子の「辣(ラー)」と花椒の「麻(マー)」の2種類の辛さが特徴です。",
-    "【ザッハトルテ (オーストリア)】ウィーンのホテル・ザッハー発祥のチョコレートケーキ。アプリコットジャムがアクセント。",
-    
-    // 動物・生き物
-    "【タツノオトシゴ】オスが育児嚢という袋を持ち、そこで卵を育てて出産する珍しい生き物です。",
-    "【コアラ】ユーカリの葉には毒がありますが、コアラは特別な消化器官で毒を分解できます。寝ている時間がとても長いです。",
-    "【キリン】首がとても長いですが、首の骨の数は人間と同じ7個です。舌は黒紫色で50cmもあります。",
-    "【ペンギン】南極にいるイメージですが、ガラパゴス諸島など温かい場所に住む種類もいます。空は飛べませんが泳ぎは達人。",
-    "【ハシビロコウ】動かない鳥として有名。獲物が水面に上がってくるのを何時間もじっと待ち伏せしています。",
-    "【カモノハシ】哺乳類なのに卵を産む不思議な動物。クチバシがあり、後ろ足には毒の爪を持っています。",
-    "【ナマケモノ】食事も睡眠も出産も木の上で行います。動きが遅すぎて、体に苔が生えることもあります。",
-    "【パンダ】笹ばかり食べていますが、消化器官は肉食動物のまま。そのため栄養吸収率が悪く、一日中食べ続けています。",
-    "【シマウマ】地肌は黒色で、白い毛と黒い毛が生えています。縞模様は虫除けや体温調節の役割があると言われています。",
-    "【イルカ】眠る時は脳の半分ずつ休ませます(半球睡眠)。溺れないように意識を保ちながら泳ぎ続けるためです。",
+    function addStepsManual() {
+        const v = parseInt(document.getElementById('manual-steps').value);
+        if(v>0) { addSteps(v); document.getElementById('manual-steps').value=""; }
+    }
 
-    // 科学・宇宙・雑学
-    "【宇宙の匂い】宇宙飛行士によると、宇宙空間(船外活動後のスーツ)は「焦げたステーキ」や「溶接の煙」のような匂いがするそうです。",
-    "【ダイヤモンド】鉛筆の芯と同じ「炭素」でできています。地球の深い場所で超高圧・高熱を受けて結晶化しました。",
-    "【雷】雷の電圧は数億ボルトにもなりますが、一瞬なのでエネルギーとして溜めるのは現在の技術では難しいそうです。",
-    "【虹】実は半円ではなく「円形」です。地上からは地面が邪魔で見えませんが、飛行機からは丸い虹が見えることがあります。",
-    "【雲】雲は水蒸気ではなく、小さな水滴や氷の粒の集まりです。水蒸気は目に見えません。",
-    "【人間の骨】赤ちゃんは約305個の骨がありますが、大人になると癒合して約206個に減ります。",
-    "【あくび】脳の温度を下げる効果があるという説が有力です。眠い時だけでなく、緊張した時にも出ることがあります。",
-    "【涙】悲しい時だけでなく、目を守るため常に分泌されています。感情による涙にはストレス物質が含まれているとか。",
-    "【1円玉】アルミニウム製で、水に浮きます。実は製造コストは1枚あたり1円以上かかっています。",
-    "【信号機】緑色なのに「青信号」と呼ぶのは、日本語の古語で緑色も含めて「あお」と呼んでいた名残です。",
-    
-    // 勉強・モチベーション
-    "【ポモドーロ法】25分勉強して5分休む。これを繰り返すと集中力が持続しやすいと言われています。",
-    "【エビングハウスの忘却曲線】人は覚えたことを1時間後には半分以上忘れます。復習が記憶定着の鍵！",
-    "【ツァイガルニク効果】やりかけの作業のほうが記憶に残りやすい心理現象。キリの悪いところで休憩するのもアリ？",
-    "【青色の効果】青色は鎮静効果があり、集中力を高めると言われています。勉強部屋に青を取り入れてみては。",
-    "【睡眠学習】寝ている間に脳は記憶を整理します。徹夜するより、しっかり寝たほうが記憶に残ります。",
-    "【場所ニューロン】場所を変えて勉強すると、脳の海馬が刺激されて記憶力がアップすることがあります。",
-    "【音読】目で見るだけでなく、声に出して耳で聞くことで、脳の複数の部分を使って覚えられます。",
-    "【人に教える】誰かに説明できるレベルまで理解すると、記憶定着率が劇的に上がります(ラーニングピラミッド)。",
-    "【ご褒美】「終わったらチョコを食べる」など、小さなご褒美を設定するとドーパミンが出てやる気が出ます。",
-    "【運動】有酸素運動をすると脳の血流が増え、記憶を司る海馬が大きくなるという研究結果があります。",
-
-    // その他ランダムTips (数合わせ)
-    "【非常口】非常口のマークの緑色の人は「ピクトさん」と呼ばれることも。走っている姿は世界共通のデザインです。",
-    "【トランプ】52枚は1年の52週を表していると言われています。マークは四季(春=クラブ、夏=ダイヤ、秋=ハート、冬=スペード)説も。",
-    "【エレベーター】鏡がついているのは身だしなみ用ではなく、車椅子の方が後ろ向きに出る時のバックミラー用です。",
-    "【バナナ】バナナの皮で滑るのは物理学的にも証明されており、イグ・ノーベル賞を受賞した研究があります。",
-    "【世界一長い地名】ニュージーランドにある丘の名前。「タウマタファカタンギハンガコアウアウオタマテアポカイフェヌアキタナタフ」です。",
-    "【キウイフルーツ】ニュージーランドの国鳥「キーウィ」に見た目が似ていることから名付けられました。",
-    "【ショートケーキ】日本発祥のケーキです。アメリカなどではビスケットのような生地を使ったものが一般的。",
-    "【SOS】実は「Save Our Souls」などの略語ではありません。モールス信号で打ちやすい「・・・ ——— ・・・」が採用されただけ。",
-    "【カンガルー】名前の由来は「わからない(Kangaroo)」と先住民が答えたのを名前だと勘違いした説…は実は俗説らしいです。",
-    "【南極】どこの国のものでもありません。南極条約により、平和利用と科学調査のために自由に使えます。",
-    "【深海】宇宙よりも謎が多いと言われています。人類が到達した最深部よりも深い場所には、まだ見ぬ生物がいるかも。",
-    "【ミツバチ】1匹が一生かかって集めるハチミツは、ティースプーン1杯分ほど。大切にいただきましょう。",
-    "【ラジオ体操】実はアメリカの保険会社が健康増進のために考案した体操が元になっています。",
-    "【ボウリング】ピンを倒す数で競いますが、昔は倒れなかったピンの数で競っていた時代もあったそうです。",
-    "【鉛筆】1本の鉛筆で書ける線の長さは約50kmと言われています。フルマラソンより長い！",
-    "【消しゴム】最初はパンくずを使って文字を消していました。ゴムの発見により現在の形に。",
-    "【猫のヒゲ】通れる隙間の幅を測るセンサーの役割があります。切ってしまうと平衡感覚が狂うことも。",
-    "【犬の嗅覚】人間の100万倍〜1億倍とも言われますが、全ての匂いに敏感なわけではなく、特定の匂い(汗や酸)に敏感です。",
-    "【オリンピック】金メダルは純金ではありません。実は銀製で、表面に金メッキが施されています。",
-    "【自由の女神】もともとは銅色(10円玉の色)でした。酸化して現在の緑青色になりました。",
-    "【サザエさん】登場人物の年齢設定、サザエさんは24歳、波平さんは54歳。意外と若い？",
-    "【ドラえもん】身長、体重、胸囲、座高など、全て「129.3」という数字で設定されています。",
-    "【月】地球から毎年約3.8cmずつ遠ざかっています。はるか未来では、月はもっと小さく見えるでしょう。",
-    "【太陽】燃えているように見えますが、酸素がないので「燃焼」ではなく「核融合反応」で光っています。",
-    "【ブラックホール】光さえも脱出できないほど重力が強い天体。時間がゆっくり流れる不思議な場所です。"
-];
-
-function getOneTip() {
-    return TIPS_DB[Math.floor(Math.random() * TIPS_DB.length)];
-}
-
-// --- グローバル変数 ---
-let currentUser = null;
-let userData = {
-    logs: [],
-    expenses: [],
-    totalStudy: 0,
-    totalGame: 0,
-    totalEarned: 0,
-    totalSpent: 0,
-    courseMode: 'easy',
-    timerEndTime: null,
-    lastLoginDate: null,
-    tickets: 0,
-    ticketsEarnedCount: 0,
-    bonusActiveUntil: 0,
-    lastAction: null
-};
-let timerInterval = null;
-let chartInstance = null;
-let walletPage = 1;
-let chartOffsetWeeks = 0; // 0=今週, 1=先週...
-
-// コース設定
-const COURSES = { hard: {r:0.5, n:"厳しめ"}, normal: {r:1.0, n:"普通"}, easy: {r:1.5, n:"ぬるま湯"} };
-
-// --- 共通関数 ---
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function logout() { location.reload(); }
-
-// --- 1. ログイン & データ管理 ---
-function login(e) {
-    if(e) e.preventDefault();
-    const name = document.getElementById('usernameInput').value.trim();
-    if(!name) return;
-    currentUser = name;
-    
-    loadData(); 
-    checkPenalty();
-    
-    document.getElementById('loginPage').classList.remove('active');
-    document.getElementById('homePage').classList.add('active');
-    document.getElementById('navBar').style.display = 'flex';
-    
-    if(userData.timerEndTime) restoreTimer();
-    updateUI();
-    if("Notification" in window) Notification.requestPermission();
-}
-
-function loadData() {
-    let stored = localStorage.getItem('studyBank_v4_' + currentUser);
-    if (!stored) stored = localStorage.getItem('studyBank_v3_' + currentUser);
-
-    if (stored) {
-        userData = JSON.parse(stored);
-        if(typeof userData.tickets === 'undefined') userData.tickets = 0;
-        if(typeof userData.ticketsEarnedCount === 'undefined') userData.ticketsEarnedCount = Math.floor(userData.totalStudy / 180);
-        if(typeof userData.bonusActiveUntil === 'undefined') userData.bonusActiveUntil = 0;
-        if(typeof userData.lastAction === 'undefined') userData.lastAction = null;
-    } else {
-        userData = { 
-            logs: [], expenses: [], 
-            totalStudy: 0, totalGame: 0, totalEarned: 0, totalSpent: 0, 
-            courseMode: 'easy', timerEndTime: null, 
-            lastLoginDate: new Date().toLocaleDateString('ja-JP'),
-            tickets: 0, ticketsEarnedCount: 0, bonusActiveUntil: 0, lastAction: null
+    // --- Stats ---
+    function getStats(lvl) {
+        const m = Math.pow(1.2, lvl - 1);
+        return {
+            hp: Math.floor(100 * m),
+            mp: Math.floor(10 * m),
+            atk: Math.floor(10 * m),
+            def: Math.floor(10 * m)
         };
     }
-    saveData();
-}
 
-function saveData() {
-    userData.lastLoginDate = new Date().toLocaleDateString('ja-JP');
-    localStorage.setItem('studyBank_v4_' + currentUser, JSON.stringify(userData));
-    // updateUIはここでは呼ばない(頻度が高いため)。必要な箇所で呼ぶ。
-}
+    function updateUI() {
+        document.getElementById('today-steps').innerText = gameState.todaySteps;
+        document.getElementById('total-steps').innerText = gameState.totalSteps;
+        document.getElementById('char-level').innerText = gameState.level;
+        document.getElementById('next-level-steps').innerText = 1000 - (gameState.totalSteps % 1000);
+        document.getElementById('stone-count').innerText = gameState.stones;
+        document.getElementById('cleared-stages').innerText = gameState.clearedStages;
 
-// --- 2. 勉強記録 & チケット & Tips ---
-function changeCourse() {
-    userData.courseMode = document.getElementById('courseSelect').value;
-    saveData();
-}
+        const s = getStats(gameState.level);
+        document.getElementById('stat-hp').innerText = s.hp;
+        document.getElementById('stat-mp').innerText = s.mp;
+        document.getElementById('stat-atk').innerText = s.atk;
+        document.getElementById('stat-def').innerText = s.def;
 
-function addStudy() {
-    const mins = parseInt(document.getElementById('studyInput').value);
-    if (!mins || mins <= 0) return;
-
-    const isBonus = Date.now() < userData.bonusActiveUntil;
-    let rate = COURSES[userData.courseMode].r;
-    if(isBonus) rate *= 2; 
-
-    const earnedMoney = Math.floor(mins * rate);
-    const today = new Date().toLocaleDateString('ja-JP');
-    
-    // 一意なIDとしてタイムスタンプを使用（厳密なUndoのため）
-    const logId = Date.now();
-    const log = { id: logId, date: today, type: 'study', minutes: mins, earned: earnedMoney };
-    
-    userData.logs.push(log);
-    userData.totalStudy += mins;
-    userData.totalEarned += earnedMoney;
-
-    const totalHours = Math.floor(userData.totalStudy / 180);
-    let ticketMsg = "";
-    if (totalHours > userData.ticketsEarnedCount) {
-        const newTickets = totalHours - userData.ticketsEarnedCount;
-        userData.tickets += newTickets;
-        userData.ticketsEarnedCount = totalHours;
-        ticketMsg = `\n🎉 チケット${newTickets}枚獲得！`;
+        renderInventory();
+        renderStages();
     }
 
-    userData.lastAction = { type: 'study', logId: logId, ticketsGot: (ticketMsg !== "") };
+    // --- Battle System ---
+    const enemies = [
+        {name:"スライム", class:"enemy-slime", hp:50, atk:5},
+        {name:"ゴブリン", class:"enemy-goblin", hp:150, atk:15},
+        {name:"キング", class:"enemy-king", hp:1000, atk:50},
+        {name:"ドラゴン", class:"enemy-dragon", hp:50000, atk:500}
+    ];
 
-    document.getElementById('studyInput').value = '';
-    saveData();
-    updateUI(); // UI更新
-
-    if (mins >= 10) {
-        const tip = getOneTip();
-        document.getElementById('tipContent').innerText = typeof tip === 'string' ? tip : tip.text; // DBが文字列かObjか
-        document.getElementById('tipAuthor').innerText = ""; 
-        openModal('tipsModal');
-    } else {
-        alert(`${mins}分記録しました。${earnedMoney}円 貯金！${ticketMsg}`);
-    }
-}
-
-// --- 3. Undo 機能 (修正版) ---
-function undoLastAction() {
-    if (!userData.lastAction) return alert("取り消せる操作がありません");
-    
-    const act = userData.lastAction;
-    
-    if (act.type === 'study') {
-        // logsから該当IDを探す
-        const idx = userData.logs.findIndex(l => l.id === act.logId);
-        if (idx === -1) return alert("既に取り消されているか、データが見つかりません");
-        
-        const log = userData.logs[idx];
-        if(!confirm(`${log.minutes}分の勉強記録を取り消しますか？`)) return;
-
-        userData.totalStudy -= log.minutes;
-        userData.totalEarned -= log.earned;
-        userData.logs.splice(idx, 1); // 削除
-
-        if (act.ticketsGot) {
-            userData.tickets = Math.max(0, userData.tickets - 1);
-            userData.ticketsEarnedCount--;
+    function renderStages() {
+        const c = document.getElementById('stage-container');
+        c.innerHTML = "";
+        for(let i=1; i<=gameState.clearedStages+1; i++) {
+            let e = enemies[(i-1)%4];
+            let div = document.createElement('div');
+            div.className = 'pixel-box';
+            div.style.marginBottom = "5px";
+            div.style.cursor = "pointer";
+            div.innerHTML = `<strong>Stage ${i}</strong> (推奨Lv${i})<br>Boss: ${e.name}`;
+            if(i<=gameState.clearedStages) div.style.background="#dcedc8"; // clear
+            div.onclick = () => startBattle(i);
+            c.appendChild(div);
         }
-    } 
-    else if (act.type === 'game') {
-        const idx = userData.logs.findIndex(l => l.id === act.logId);
-        if (idx === -1) return alert("データが見つかりません");
-        
-        const log = userData.logs[idx];
-        if(!confirm(`${log.minutes}分のゲーム記録を取り消しますか？`)) return;
-
-        userData.totalGame -= log.minutes;
-        userData.logs.splice(idx, 1);
-    } 
-    else if (act.type === 'expense') {
-        const idx = userData.expenses.findIndex(e => e.id === act.logId);
-        if (idx === -1) return alert("データが見つかりません");
-        
-        const exp = userData.expenses[idx];
-        if(!confirm(`「${exp.item}」の支出を取り消しますか？`)) return;
-
-        userData.totalSpent -= exp.cost;
-        userData.expenses.splice(idx, 1);
     }
 
-    userData.lastAction = null;
-    saveData();
-    updateUI();
-    alert("取り消しました。");
-}
+    function startBattle(stage) {
+        document.getElementById('stage-container').style.display = 'none';
+        document.getElementById('battle-scene').style.display = 'block';
+        
+        const log = document.getElementById('battle-log');
+        log.innerHTML = "=== BATTLE START ===<br>";
+        
+        const eData = enemies[(stage-1)%4];
+        const growth = Math.pow(1.2, stage-1);
+        
+        let enemy = {
+            name: eData.name,
+            maxHp: Math.floor(eData.hp * growth),
+            hp: Math.floor(eData.hp * growth),
+            atk: Math.floor(eData.atk * growth),
+            class: eData.class
+        };
+        
+        let player = getStats(gameState.level);
+        let playerHp = player.hp;
+        
+        // Setup Sprites
+        document.getElementById('battle-hero').className = "sprite hero-idle";
+        document.getElementById('battle-enemy').className = "sprite " + enemy.class;
+        document.getElementById('enemy-name').innerText = enemy.name;
 
-// --- 4. リュック & チケット ---
-function openBag() {
-    updateUI();
-    openModal('bagModal');
-}
-function useTicket() {
-    if (userData.tickets <= 0) return alert("チケットがありません");
-    if (confirm("チケットを消費して、24時間お金を2倍にしますか？")) {
-        userData.tickets--;
-        userData.bonusActiveUntil = Date.now() + (24 * 60 * 60 * 1000);
+        // Loop
+        let turn = 0;
+        const timer = setInterval(() => {
+            turn++;
+            
+            // Player Attack
+            document.getElementById('battle-hero').className = "sprite hero-attack attack-anim-right";
+            setTimeout(()=> document.getElementById('battle-hero').className="sprite hero-idle", 300);
+
+            let dmg = Math.floor(player.atk * (0.9 + Math.random()*0.2));
+            enemy.hp -= dmg;
+            showDamage(document.getElementById('battle-enemy'), dmg, 'damage-enemy');
+            
+            // Enemy Shake
+            const eSprite = document.getElementById('battle-enemy');
+            eSprite.classList.add('shake');
+            setTimeout(()=>eSprite.classList.remove('shake'), 300);
+
+            log.innerHTML = `> あなたの攻撃! ${dmg}ダメ<br>` + log.innerHTML;
+
+            if(enemy.hp <= 0) {
+                clearInterval(timer);
+                winBattle(stage);
+                return;
+            }
+
+            // Enemy Attack (Delayed)
+            setTimeout(() => {
+                let eDmg = Math.max(1, Math.floor(enemy.atk - player.def/3));
+                playerHp -= eDmg;
+                
+                showDamage(document.getElementById('battle-hero'), eDmg, 'damage-player');
+                document.getElementById('battle-stage').classList.add('shake');
+                setTimeout(()=>document.getElementById('battle-stage').classList.remove('shake'), 300);
+
+                log.innerHTML = `<span style="color:#ff6f69">> ${enemy.name}の攻撃! ${eDmg}ダメ</span><br>` + log.innerHTML;
+                
+                if(playerHp <= 0) {
+                    clearInterval(timer);
+                    log.innerHTML = `<br><strong style="color:red">敗北...</strong><br>` + log.innerHTML;
+                }
+            }, 600);
+
+        }, 1500);
+    }
+
+    function showDamage(target, val, typeClass) {
+        const rect = target.getBoundingClientRect();
+        const popup = document.createElement('div');
+        popup.className = `damage-popup ${typeClass}`;
+        popup.innerText = val;
+        // Position relative to target
+        popup.style.left = (rect.left + rect.width/2) + "px";
+        popup.style.top = rect.top + "px";
+        document.body.appendChild(popup);
+        setTimeout(() => popup.remove(), 800);
+    }
+
+    function winBattle(stage) {
+        const log = document.getElementById('battle-log');
+        log.innerHTML = `<br><strong style="color:#f1c40f">勝利！！ 石 +1</strong><br>` + log.innerHTML;
+        if(stage > gameState.clearedStages) gameState.clearedStages = stage;
+        gameState.stones++;
         saveData();
-        updateUI();
-        alert("ボーナス発動！");
-        openBag();
     }
-}
 
-// --- 5. 支出 ---
-function addExpense() {
-    const item = document.getElementById('expenseItem').value;
-    const cost = parseInt(document.getElementById('expenseCost').value);
-    if (!item || !cost) return;
+    function closeBattle() {
+        document.getElementById('stage-container').style.display = 'block';
+        document.getElementById('battle-scene').style.display = 'none';
+        updateUI();
+    }
 
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('ja-JP') + " " + now.getHours() + ":" + String(now.getMinutes()).padStart(2,'0');
-    const logId = Date.now();
-    const exp = { id: logId, date: dateStr, item: item, cost: cost };
-    
-    userData.expenses.push(exp);
-    if(userData.expenses.length > 100) userData.expenses.shift();
-    userData.totalSpent += cost;
-    
-    userData.lastAction = { type: 'expense', logId: logId };
-    
-    document.getElementById('expenseItem').value = '';
-    document.getElementById('expenseCost').value = '';
-    saveData();
-    updateUI();
-    alert(`記録しました。残高: ${(userData.totalEarned - userData.totalSpent)}円`);
-}
+    // --- Gacha System ---
+    function pullGacha() {
+        if(gameState.stones < 5) { alert("石が足りません"); return; }
+        gameState.stones -= 5;
+        
+        // Logic
+        const r = Math.random()*100;
+        let rarity="N", name="村人", color="gray";
+        
+        if(r<8) { rarity="SSR"; name="伝説の勇者"; color="#e91e63"; }
+        else if(r<20) { rarity="SR"; name="魔導師"; color="#f39c12"; }
+        else if(r<40) { rarity="R"; name="戦士"; color="#3498db"; }
+        
+        gameState.inventory.push({rarity, name, date:new Date().toLocaleDateString()});
+        saveData();
 
-function changeWalletPage(d) {
-    walletPage += d;
-    updateUI();
-}
+        // Animation
+        playGachaAnim(rarity, name, color);
+    }
 
-// --- 6. ゲーム & タイマー ---
-function startTimer() {
-    const mins = parseInt(document.getElementById('timerInput').value);
-    const balance = userData.totalStudy - userData.totalGame;
-    if (!mins || mins <= 0) return alert("入力してください");
-    if (mins > balance) return alert("残高不足です");
-
-    userData.timerEndTime = Date.now() + mins * 60000;
-    userData.currentTimerMins = mins;
-    saveData();
-    setupTimerUI(userData.timerEndTime);
-}
-function setupTimerUI(endTime) {
-    document.getElementById('timerSetup').style.display='none';
-    document.getElementById('timerActive').style.display='block';
-    if(timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(()=>{
-        const diff = endTime - Date.now();
-        if(diff<=0) finishTimerAuto();
-        else {
-            const m=Math.floor(diff/60000); const s=Math.floor((diff%60000)/1000);
-            document.getElementById('timerDisplay').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    function playGachaAnim(rarity, name, color) {
+        const overlay = document.getElementById('gacha-overlay');
+        const rays = document.getElementById('gacha-rays');
+        const text = document.getElementById('gacha-result-text');
+        
+        overlay.style.display = "flex";
+        text.className = "gacha-result-text"; // reset
+        text.innerHTML = "";
+        rays.innerHTML = "";
+        
+        // Create Rays for high rarity
+        if(rarity === "SSR" || rarity === "SR") {
+            rays.style.display = "block";
+            for(let i=0; i<12; i++) {
+                let div = document.createElement('div');
+                div.className = "ray";
+                div.style.transform = `rotate(${i*30}deg)`;
+                rays.appendChild(div);
+            }
+            if(rarity==="SSR") overlay.classList.add('ssr-glow');
+        } else {
+            rays.style.display = "none";
+            overlay.classList.remove('ssr-glow');
         }
-    },500);
-}
-function restoreTimer() {
-    if(Date.now() < userData.timerEndTime) {
-        showPage('timerPage', document.querySelectorAll('.nav-item')[2]);
-        setupTimerUI(userData.timerEndTime);
-    } else {
-        finishTimerAuto();
+
+        // Delay for suspense
+        setTimeout(() => {
+            text.innerHTML = `<div style="font-size:1.5rem">${rarity}</div><div style="color:${color}">${name}</div>`;
+            text.classList.add('show-result');
+            
+            // Vibration for SSR
+            if(rarity==="SSR" && navigator.vibrate) navigator.vibrate([100,50,100,50,200]);
+        }, 1500);
     }
-}
-function finishTimerAuto() {
-    clearInterval(timerInterval);
-    if(userData.timerEndTime) {
-        const mins = userData.currentTimerMins;
-        const logId = Date.now();
-        const log = { id: logId, date: new Date().toLocaleDateString('ja-JP'), type:'game', minutes:mins };
-        userData.logs.push(log);
-        userData.totalGame += mins;
-        userData.lastAction = { type: 'game', logId: logId };
-        
-        userData.timerEndTime = null;
-        userData.currentTimerMins = null;
-        saveData();
+
+    function closeGachaResult() {
+        document.getElementById('gacha-overlay').style.display = "none";
         updateUI();
-        alert("時間です！");
-        if(Notification.permission==="granted") new Notification("Study Bank", {body:"終了時間です"});
-    }
-    resetTimerUI();
-}
-function stopTimerManual() {
-    if(!confirm("終了しますか？")) return;
-    finishTimerAuto();
-}
-function addGameManual() {
-    const mins = parseInt(document.getElementById('manualGameInput').value);
-    const balance = userData.totalStudy - userData.totalGame;
-    if(!mins || mins>balance) return alert("入力エラーまたは残高不足");
-    
-    const logId = Date.now();
-    const log = { id: logId, date: new Date().toLocaleDateString('ja-JP'), type:'game', minutes:mins };
-    userData.logs.push(log);
-    userData.totalGame += mins;
-    userData.lastAction = { type: 'game', logId: logId };
-    
-    saveData();
-    updateUI();
-    document.getElementById('manualGameInput').value='';
-    alert(`${mins}分記録しました`);
-}
-function resetTimerUI() {
-    document.getElementById('timerSetup').style.display='block';
-    document.getElementById('timerActive').style.display='none';
-    document.getElementById('timerInput').value='';
-}
-
-// --- 7. UI更新 ---
-function updateUI() {
-    document.getElementById('courseSelect').value = userData.courseMode;
-    document.getElementById('balanceDisplay').innerText = userData.totalStudy - userData.totalGame;
-    
-    const money = userData.totalEarned - userData.totalSpent;
-    document.getElementById('moneyDisplayHome').innerText = money.toLocaleString();
-    document.getElementById('walletBalanceDisplay').innerText = money.toLocaleString();
-    
-    // ボーナス表示
-    const isBonus = Date.now() < userData.bonusActiveUntil;
-    document.getElementById('bonusIndicator').style.display = isBonus ? 'inline-block' : 'none';
-    if(document.getElementById('bagModal').style.display !== 'none') {
-        document.getElementById('ticketCountDisplay').innerText = userData.tickets;
-        document.getElementById('bonusStatusText').innerText = isBonus ? "🔥 現在2倍ボーナス適用中！" : "ボーナス未発動";
     }
 
-    // Undoボタン制御: 直前のタイプに合わせて表示切り替え
-    const la = userData.lastAction;
-    document.getElementById('studyUndoArea').style.display = (la && la.type === 'study') ? 'block' : 'none';
-    document.getElementById('gameUndoArea').style.display = (la && la.type === 'game') ? 'block' : 'none';
-    document.getElementById('expenseUndoArea').style.display = (la && la.type === 'expense') ? 'block' : 'none';
-
-    // 帳簿リスト
-    const list = document.getElementById('expenseList');
-    list.innerHTML = "";
-    const all = userData.expenses.slice().reverse();
-    const maxPage = Math.ceil(all.length/5) || 1;
-    if(walletPage < 1) walletPage = 1;
-    if(walletPage > maxPage) walletPage = maxPage;
-    
-    const pageData = all.slice((walletPage-1)*5, walletPage*5);
-    if(pageData.length===0) list.innerHTML = "<li style='text-align:center;color:#999'>履歴なし</li>";
-    else {
-        pageData.forEach(ex => {
-            const li = document.createElement('li');
-            li.className = 'history-item';
-            li.innerHTML = `<div><span class="date-small">${ex.date}</span> ${ex.item}</div><b>-${ex.cost}</b>`;
-            list.appendChild(li);
+    function renderInventory() {
+        const l = document.getElementById('inventory-list');
+        l.innerHTML = "";
+        gameState.inventory.slice().reverse().forEach(i => {
+            let li = document.createElement('li');
+            li.style.borderBottom = "1px dashed #ccc";
+            li.style.padding = "5px";
+            li.style.listStyle = "none";
+            li.innerHTML = `<strong class="rarity-${i.rarity}">${i.rarity}</strong> ${i.name}`;
+            l.appendChild(li);
         });
     }
-    document.getElementById('pageIndicator').innerText = `${walletPage}/${maxPage}`;
-    
-    if(document.getElementById('statsPage').classList.contains('active')) renderChart();
-}
 
-function checkPenalty() {
-    const today = new Date().toLocaleDateString('ja-JP');
-    if(userData.lastLoginDate && userData.lastLoginDate !== today) {
-        if((userData.totalEarned - userData.totalSpent) < 0) {
-            alert("昨日の収支がマイナスでした。ペナルティ: ゲーム時間-60分");
-            userData.totalGame += 60;
-            saveData();
-        }
+    // --- Nav ---
+    function switchScreen(id, el) {
+        document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+        document.getElementById('screen-'+id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+        el.classList.add('active');
     }
-}
 
-// --- 8. グラフ機能 (週移動) ---
-function shiftChartWeek(offset) {
-    chartOffsetWeeks += offset;
-    // 未来には行けないようにする
-    if(chartOffsetWeeks < 0) chartOffsetWeeks = 0;
-    renderChart();
-}
-
-function showPage(id, item) {
-    document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
-    if(item) item.classList.add('active');
-    if(id==='statsPage') {
-        chartOffsetWeeks = 0; // デフォルトは今週
-        renderChart();
-    }
-}
-
-function renderChart() {
-    const ctx = document.getElementById('myChart').getContext('2d');
-    
-    // 表示期間の計算
-    // 今日の日付を取得し、chartOffsetWeeks * 7日分 引く
-    const baseDate = new Date();
-    baseDate.setDate(baseDate.getDate() - (chartOffsetWeeks * 7));
-    
-    // 期間表示用
-    const endDateStr = baseDate.toLocaleDateString('ja-JP');
-    const tempStartDate = new Date(baseDate);
-    tempStartDate.setDate(tempStartDate.getDate() - 6);
-    const startDateStr = tempStartDate.toLocaleDateString('ja-JP');
-    
-    document.getElementById('chartRangeDisplay').innerText = `${startDateStr} 〜 ${endDateStr}`;
-
-    const labels=[], sData=[], gData=[];
-    
-    // 過去7日分生成 (古い順 or 新しい順? Chart.jsは通常左が古い)
-    // ここでは左(6日前) -> 右(今日) の順で作る
-    for(let i=6; i>=0; i--) {
-        const d = new Date(baseDate); 
-        d.setDate(d.getDate() - i);
-        const ds = d.toLocaleDateString('ja-JP'); // "2026/1/19"
-        
-        labels.push(ds.slice(5)); // "1/19"
-        
-        sData.push(userData.logs.filter(l=>l.date===ds && l.type==='study').reduce((a,b)=>a+b.minutes,0));
-        gData.push(userData.logs.filter(l=>l.date===ds && l.type==='game').reduce((a,b)=>a+b.minutes,0));
-    }
-    
-    if(chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{label:'勉強',data:sData,backgroundColor:'#2C3E50'}, {label:'ゲーム',data:gData,backgroundColor:'#6AB187'}] },
-        options: { scales:{y:{beginAtZero:true}}, animation: {duration: 500} }
-    });
-    
-    document.getElementById('totalStudyStat').innerText = userData.totalStudy;
-    document.getElementById('totalGameStat').innerText = userData.totalGame;
-}
-
-// データバックアップ機能
-function copyBackup() {
-    const text = JSON.stringify(userData);
-    document.getElementById('backupText').value = text;
-    document.getElementById('backupText').select();
-    document.execCommand('copy');
-    alert("コピーしました。");
-}
-function restoreData() {
-    try {
-        const data = JSON.parse(document.getElementById('restoreText').value);
-        if(data.totalStudy !== undefined) {
-            userData = data;
-            saveData();
-            updateUI();
-            alert("復元しました！");
-            closeModal('backupModal');
-        } else {
-            alert("データ形式が違います");
-        }
-    } catch(e) {
-        alert("復元に失敗しました");
-    }
-}
+    // Init
+    updateUI();
 </script>
+
 </body>
 </html>
